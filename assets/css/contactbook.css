@@ -1,0 +1,98 @@
+/* ----------------------------- */
+/* Styling Specific to ContactBook */
+/* ----------------------------- */
+
+.bold_heading {
+  font-weight: 800;
+  display: block;
+  font-size: 1.75em;
+  margin: 0 0 0.25em 0;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+}
+
+.hello {
+  text-align: center;
+  padding: 4em 0;
+}
+
+/* Admin Tools Section - stretch each row of tool cards to a uniform height */
+.tools_row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+  .tools_row > * {
+    display: flex;
+  }
+
+/* Admin Login Panel (from ARCTC modal.css / NSXCommon) */
+.modalDialog {
+  position: fixed;
+  font-family: Arial, Helvetica, sans-serif;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: rgba(0,0,0,0.1);
+  z-index: 99999;
+  opacity: 0;
+  -webkit-transition: opacity 200ms ease-in;
+  -moz-transition: opacity 200ms ease-in;
+  transition: opacity 200ms ease-in;
+  pointer-events: none;
+}
+
+  .modalDialog:target,
+  .modalDialog.errorevent {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .modalDialog > div {
+    width: 40%;
+    min-width: 18em;
+    position: relative;
+    margin: 10% auto;
+    padding: 5px 20px 13px 20px;
+    border: solid 2px #F88F78;
+    border-radius: 10px;
+    background: #0f0f0f;
+  }
+
+.modalclose {
+  background: #606061;
+  color: #FFFFFF;
+  line-height: 25px;
+  position: absolute;
+  right: -12px;
+  text-align: center;
+  top: -10px;
+  width: 24px;
+  text-decoration: none;
+  font-weight: bold;
+  border-radius: 12px;
+  box-shadow: 1px 1px 3px #000;
+}
+
+  .modalclose:hover {
+    background: #4b6f9d;
+    color: #FFFFFF;
+  }
+
+.login_error_message {
+  display: block;
+  margin: 0.25em 0;
+  color: #ff0000;
+}
+
+.forgot_password_link {
+  display: block;
+  margin-top: 0.5em;
+  text-align: center;
+}
+
+/* Password Reset Page */
+.reset_panel {
+  max-width: 40em;
+}
