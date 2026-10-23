@@ -4,3 +4,16 @@ config.php
 # Book folders (books/<book uuid>/) are created on the server by create_book.php
 /books/*
 !/books/.htaccess
+
+# Database scripts - kept locally, run by hand in phpMyAdmin
+*.sql
+
+# PHP error log Bluehost writes into the site folder
+error_log
+
+# OS and editor clutter
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

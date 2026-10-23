@@ -5,11 +5,28 @@ PHP web application hosted at Bluehost.
 ## Setup
 
 1. Create a MySQL database and user in Bluehost cPanel.
-2. If the `CB_User_Accounts` table was created by hand in phpMyAdmin, run `sql/001_fix_users_table.sql` once; for a fresh database run `sql/schema.sql`.
+2. Create the tables below in phpMyAdmin. The SQL scripts are kept locally, not in the repository.
 3. Copy `config.example.php` to `config.php` and fill in the database credentials and session path.
    `config.php` is git-ignored — upload it to the server separately.
 4. Set `APP_BASE_URL` and `MAIL_FROM` in `config.php` (used for password reset emails).
 5. Create an admin login over SSH: `php tools/create_user.php <email> admin` — usernames are email addresses.
+
+## Database tables
+
+| Table | Holds | Key columns |
+|---|---|---|
+| `CB_User_Accounts` | Logins | `CB_Username` (an email, unique), `CB_Password` (VARCHAR(255) for `password_hash()`), `CB_User_Role` (`admin` / `user`), `CB_Password_Reset_ID`, `CB_Password_Reset_Timer` |
+| `CB_Created_Books` | One row per contact book | `CB_Book_UUID`, `CB_Book_Name_About`, `CB_Base_Directory`, `CB_Book_Cover_Picture`, `CB_Book_Description` |
+| `CB_Book_Entry` | One row per entry added to a book | `ENTRY_UUID`, `ENTRY_Book_Parent_UUID` (= `CB_Book_UUID`), `ENTRY_Name`, `ENTRY_Emails`, `ENTRY_Street_Address`, `ENTRY_City`, `ENTRY_State`, `ENTRY_Zip`, `ENTRY_Phone`, `ENTRY_Notes` |
+
+Each table also has an `AUTO_INCREMENT` primary key (`CB_User_ID`, `CB_Book_ID`, `ENTRY_ID`).
+
+## Books and photos
+
+Each book gets a folder at `books/<CB_Book_UUID>/` with its cover photo and a `pictures/` folder; photos
+added with an entry go in `books/<CB_Book_UUID>/pictures/<ENTRY_UUID>/`. These folders are created on the
+server and are not in the repository. Upload `books/.htaccess` and `.user.ini` (both dot-files) — they block
+folder listings and raise PHP's upload limits.
 
 ## Admin login
 
