@@ -1,9 +1,10 @@
 <?php
 include('session.php');
 require_once 'bookFunctions.php';
+require_once 'userFunctions.php';
 
-// Admin-only page.
-if ($login_user_role !== 'admin') {
+// Admin-only page (admins and overlords).
+if (!user_is_admin($login_user_role)) {
     header('Location: admin.php');
     exit();
 }
@@ -11,10 +12,12 @@ if ($login_user_role !== 'admin') {
 $error       = '';
 $name        = '';
 $description = '';
+$admins      = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name        = $_POST['book_name'] ?? '';
     $description = $_POST['book_description'] ?? '';
+    $admins      = is_string($_POST['book_admins'] ?? null) ? $_POST['book_admins'] : '';
 
     if (empty($_POST) && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) {
         // Upload bigger than the server's post_max_size - PHP discards the whole form.
@@ -22,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!app_csrf_valid($_POST['csrf_token'] ?? null)) {
         $error = 'Your session has changed since this page was opened. Please try again.';
     } else {
-        $result = create_book($name, $description, $_FILES['book_photo'] ?? null);
+        $result = create_book($name, $description, $_FILES['book_photo'] ?? null, $login_username, $admins);
         if ($result['success']) {
             // Post/Redirect/Get: refreshing the dashboard won't create a second book.
             $_SESSION['flash_message'] = 'Created a new book for ' . $result['name'] . '.';
@@ -32,6 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error       = $result['error'];
         $name        = $result['name'];
         $description = $result['description'];
+        $admins      = $result['admins'];
     }
 }
 ?>
@@ -55,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			<section id="main" class="wrapper">
 				<div class="inner form_panel">
 					<span class="bold_heading">Create a New Book</span>
-					<p>Enter the name of the person this contact book is for. The description and photo are optional.</p>
+					<p>Enter the name of the person this contact book is for. The description, additional admins and photo are optional.</p>
 
 					<form action="create_book.php" method="post" enctype="multipart/form-data">
 						<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(app_csrf_token()); ?>" />
@@ -69,6 +73,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 								<label for="book_description">Description</label>
 								<textarea name="book_description" id="book_description" rows="5"
 									maxlength="<?php echo BOOK_DESCRIPTION_MAX_LENGTH; ?>" placeholder="What is this book about?"><?php echo htmlspecialchars($description); ?></textarea>
+							</div>
+							<div class="12u$">
+								<label for="book_admins">Additional Admins</label>
+								<textarea name="book_admins" id="book_admins" rows="3" autocomplete="off"
+									placeholder="e.g. jane@example.com, bob@example.com"><?php echo htmlspecialchars($admins); ?></textarea>
+								<p class="field_note">Optional. Email addresses of other users who can manage this book, separated by commas or
+								on separate lines. You (<?php echo htmlspecialchars($login_username); ?>) are added automatically.</p>
 							</div>
 							<div class="12u$">
 								<label for="book_photo">Photo</label>

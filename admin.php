@@ -1,7 +1,9 @@
 <?php
 include('session.php');
+require_once 'userFunctions.php';
 
-$is_admin = ($login_user_role === 'admin');
+$is_admin    = user_is_admin($login_user_role);     // admin or overlord
+$is_overlord = user_is_overlord($login_user_role);  // sees overlord-level tools too
 $panel_name = $is_admin ? 'Administrative Panel' : 'Account Panel';
 
 // One-time message from another admin page (e.g. "book created").
@@ -51,9 +53,9 @@ unset($_SESSION['flash_message']);
 						<div class="4u 12u$(medium)">
 							<section class="post">
 								<div class="content">
-									<h3>Manage Contacts</h3>
-									<p>Add, view, edit and delete entries in the ContactBook database.</p>
-									<a href="#" class="button fit special">Coming Soon...</a>
+									<h3>Manage a Book</h3>
+									<p>Choose one of the books you're an admin of to work on it.</p>
+									<a href="manage_book.php" class="button fit special">Manage a Book</a>
 								</div>
 							</section>
 						</div>
@@ -66,15 +68,18 @@ unset($_SESSION['flash_message']);
 								</div>
 							</section>
 						</div>
+						<?php if ($is_overlord) { ?>
+						<!-- Overlord-level tools -->
 						<div class="4u 12u$(medium)">
 							<section class="post">
 								<div class="content">
-									<h3>User Accounts</h3>
-									<p>Create and manage the users that can log in to ContactBook.</p>
-									<a href="#" class="button fit special">Coming Soon...</a>
+									<h3>Create a New User</h3>
+									<p>Add an admin or overlord. They'll be emailed a link to choose their password.</p>
+									<a href="create_user.php" class="button fit special">Create a User</a>
 								</div>
 							</section>
 						</div>
+						<?php } ?>
 					</div>
 					<?php } else { ?>
 					<p>Your account does not have admin rights. Contact a ContactBook administrator if you need access to the admin tools.</p>

@@ -30,7 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit'])) {
         $stmt->execute([$username]);
         $row = $stmt->fetch();
 
-        if ($row && password_verify($password, $row['CB_Password'])) {
+        // CB_Password is NULL for a new user who hasn't chosen a password yet.
+        if ($row && is_string($row['CB_Password']) && password_verify($password, $row['CB_Password'])) {
             app_login_success($username); // Initializing Session (regenerates session ID)
             header('Location: admin.php');
             exit();

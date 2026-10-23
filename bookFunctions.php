@@ -13,6 +13,9 @@
 /*  or cover.png, with its filename in CB_Book_Cover_Picture.  */
 /*  Each book also gets a pictures/ folder for the photos      */
 /*  people add with their entries (pictures/<ENTRY_UUID>/).    */
+/*  CB_Book_Admins holds the emails (usernames) of the users   */
+/*  who can manage the book, comma-separated. The user who     */
+/*  creates a book is added to it.                             */
 /*                                                             */
 /*-------------------------------------------------------------*/
 require_once __DIR__ . '/databaseFunctions.php';
@@ -24,6 +27,9 @@ const BOOK_DESCRIPTION_MAX_LENGTH = 1000;
 const BOOK_PHOTO_MAX_BYTES     = 10 * 1048576;  // 10 MB - keep in step with .user.ini
 const BOOK_PHOTO_MAX_PIXELS    = 24000000;      // 24 megapixels - larger images need too much memory to resize
 const BOOK_PHOTO_MAX_DIMENSION = 1600;          // saved photos are shrunk to fit 1600 x 1600
+const BOOK_ADMINS_SEPARATOR    = ',';           // CB_Book_Admins: "a@example.com,b@example.com"
+const BOOK_ADMINS_MAX_COUNT    = 20;            // additional admins entered when creating a book
+const BOOK_ADMIN_EMAIL_MAX_LENGTH = 128;        // same as CB_Username
 
 // Written into every book's base directory. Files uploaded to a book must never
 // run as code, and folder contents shouldn't be listable.
@@ -241,16 +247,23 @@ function book_directory_path(string $uuid): string {
 /* Inputs:      $name - name of the person the book is for.    */
 /*              $description - optional description.           */
 /*              $photo - optional $_FILES entry for the photo. */
+/*              $creator_email - username of the user creating */
+/*              the book; saved as its first book admin.       */
+/*              $other_admins - optional emails of more book   */
+/*              admins, separated by commas, semicolons,       */
+/*              spaces or new lines.                           */
 /* Returns:     ['success' => bool, 'error' => string,         */
 /*               'uuid' => string, 'name' => string,           */
-/*               'description' => string]                      */
+/*               'description' => string, 'admins' => string]  */
 /* *********************************************************** */
-function create_book(string $name, string $description = '', ?array $photo = null): array {
+function create_book(string $name, string $description = '', ?array $photo = null, string $creator_email = '',
+                     string $other_admins = ''): array {
     // Collapse runs of whitespace (including newlines/tabs) to single spaces.
     $name        = trim(preg_replace('/\s+/u', ' ', $name) ?? '');
     $description = clean_book_description($description);
-    $fail = function (string $error) use (&$name, &$description): array {
-        return ['success' => false, 'error' => $error, 'uuid' => '', 'name' => $name, 'description' => $description];
+    $fail = function (string $error) use (&$name, &$description, &$other_admins): array {
+        return ['success' => false, 'error' => $error, 'uuid' => '', 'name' => $name, 'description' => $description,
+                'admins' => $other_admins];
     };
 
     $error = validate_book_name($name);
@@ -259,6 +272,10 @@ function create_book(string $name, string $description = '', ?array $photo = nul
     }
     if (mb_strlen($description, 'UTF-8') > BOOK_DESCRIPTION_MAX_LENGTH) {
         return $fail('The description can be at most ' . BOOK_DESCRIPTION_MAX_LENGTH . ' characters.');
+    }
+    $parsed = parse_book_admin_emails($other_admins);
+    if ($parsed['error'] !== '') {
+        return $fail($parsed['error']);
     }
     $upload = check_book_photo_upload($photo);
     if ($upload['error'] !== '') {
@@ -300,17 +317,20 @@ function create_book(string $name, string $description = '', ?array $photo = nul
         $connection = Create_SQL_PHP_DataObject();
         $stmt = $connection->prepare(
             'INSERT INTO CB_Created_Books
-                (CB_Book_UUID, CB_Book_Name_About, CB_Base_Directory, CB_Book_Description, CB_Book_Cover_Picture)
-             VALUES (?, ?, ?, ?, ?)'
+                (CB_Book_UUID, CB_Book_Name_About, CB_Base_Directory, CB_Book_Description, CB_Book_Cover_Picture, CB_Book_Admins)
+             VALUES (?, ?, ?, ?, ?, ?)'
         );
-        $stmt->execute([$uuid, $name, $base_directory, ($description === '') ? null : $description, $photo_filename]);
+        $admins = join_book_admins(array_merge([$creator_email], $parsed['emails']));
+        $stmt->execute([$uuid, $name, $base_directory, ($description === '') ? null : $description, $photo_filename,
+                        ($admins === '') ? null : $admins]);
     } catch (PDOException $e) {
         error_log('ContactBook: could not save book ' . $uuid . ': ' . $e->getMessage());
         remove_book_directory($full_path);
         return $fail('The book could not be saved. Please try again.');
     }
 
-    return ['success' => true, 'error' => '', 'uuid' => $uuid, 'name' => $name, 'description' => $description];
+    return ['success' => true, 'error' => '', 'uuid' => $uuid, 'name' => $name, 'description' => $description,
+            'admins' => $admins];
 }
 
 /* *********************************************************** */
@@ -351,4 +371,82 @@ function summarize_book_description(?string $description, int $max_length = 150)
         $text = mb_substr($text, 0, $last_space, 'UTF-8');
     }
     return rtrim($text, " .,;:-") . '…';
+}
+
+/* *********************************************************** */
+/* Function:    split_book_admins                              */
+/* Description: Turns a CB_Book_Admins value into a list of    */
+/*              emails - lowercased, trimmed, no blanks or     */
+/*              duplicates.                                    */
+/* Inputs:      $admins - the column value (may be NULL).      */
+/* Returns:     The list of emails.                            */
+/* *********************************************************** */
+function split_book_admins(?string $admins): array {
+    $emails = array_map(fn($email) => strtolower(trim($email)), explode(BOOK_ADMINS_SEPARATOR, (string) $admins));
+    return array_values(array_unique(array_filter($emails, fn($email) => $email !== '')));
+}
+
+/* *********************************************************** */
+/* Function:    join_book_admins                               */
+/* Description: The opposite of split_book_admins.             */
+/* Inputs:      $emails - the list of emails.                  */
+/* Returns:     The CB_Book_Admins value ('' if no emails).    */
+/* *********************************************************** */
+function join_book_admins(array $emails): string {
+    return implode(BOOK_ADMINS_SEPARATOR, split_book_admins(implode(BOOK_ADMINS_SEPARATOR, $emails)));
+}
+
+/* *********************************************************** */
+/* Function:    parse_book_admin_emails                        */
+/* Description: Checks the "additional admins" box on the      */
+/*              Create a New Book form. Emails can be          */
+/*              separated by commas, semicolons, spaces or new */
+/*              lines. The box is optional.                    */
+/* Inputs:      $text - what was typed in the box.             */
+/* Returns:     ['emails' => lowercased, de-duplicated list,   */
+/*               'error' => message, or '' if all are OK]      */
+/* *********************************************************** */
+function parse_book_admin_emails(string $text): array {
+    $emails = array_values(array_unique(array_map('strtolower',
+        preg_split('/[\s,;]+/u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [])));
+    if (count($emails) > BOOK_ADMINS_MAX_COUNT) {
+        return ['emails' => [], 'error' => 'Please enter at most ' . BOOK_ADMINS_MAX_COUNT . ' additional admins.'];
+    }
+    foreach ($emails as $email) {
+        if (strlen($email) > BOOK_ADMIN_EMAIL_MAX_LENGTH || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            // Shown escaped by the page; cut down in case it's very long.
+            return ['emails' => [], 'error' => '"' . mb_strimwidth($email, 0, 60, '…', 'UTF-8') . '" is not a valid email address.'];
+        }
+    }
+    return ['emails' => $emails, 'error' => ''];
+}
+
+/* *********************************************************** */
+/* Function:    list_books_for_admin                           */
+/* Description: The books a user can manage - those with their */
+/*              email in CB_Book_Admins - in order of the name */
+/*              of the person each one is for. Matching is     */
+/*              done here rather than in SQL so that "a@x.com" */
+/*              never matches "ba@x.com".                      */
+/* Inputs:      $email - the user's username.                  */
+/*              $all - true to return every book (overlords).  */
+/* Returns:     Rows with CB_Book_UUID, CB_Book_Name_About,    */
+/*              CB_Book_Description and CB_Book_Admins.        */
+/* *********************************************************** */
+function list_books_for_admin(string $email, bool $all = false): array {
+    $email = strtolower(trim($email));
+    $connection = Create_SQL_PHP_DataObject();
+    $stmt = $connection->query(
+        'SELECT CB_Book_UUID, CB_Book_Name_About, CB_Book_Description, CB_Book_Admins
+         FROM CB_Created_Books
+         ORDER BY CB_Book_Name_About, CB_Book_ID'
+    );
+    $books = $stmt->fetchAll();
+    if (!$all) {
+        $books = array_values(array_filter($books,
+            fn($book) => in_array($email, split_book_admins($book['CB_Book_Admins']), true)));
+    }
+    $stmt = null;
+    $connection = null;
+    return $books;
 }

@@ -9,14 +9,15 @@ PHP web application hosted at Bluehost.
 3. Copy `config.example.php` to `config.php` and fill in the database credentials and session path.
    `config.php` is git-ignored — upload it to the server separately.
 4. Set `APP_BASE_URL` and `MAIL_FROM` in `config.php` (used for password reset emails).
-5. Create an admin login over SSH: `php tools/create_user.php <email> admin` — usernames are email addresses.
+5. Create the first overlord login over SSH: `php tools/create_user.php <email> overlord` — usernames are email
+   addresses. After that, overlords can add users from the dashboard's **Create a New User** tool.
 
 ## Database tables
 
 | Table | Holds | Key columns |
 |---|---|---|
-| `CB_User_Accounts` | Logins | `CB_Username` (an email, unique), `CB_Password` (VARCHAR(255) for `password_hash()`), `CB_User_Role` (`admin` / `user`), `CB_Password_Reset_ID`, `CB_Password_Reset_Timer` |
-| `CB_Created_Books` | One row per contact book | `CB_Book_UUID`, `CB_Book_Name_About`, `CB_Base_Directory`, `CB_Book_Cover_Picture`, `CB_Book_Description` |
+| `CB_User_Accounts` | Logins | `CB_Username` (an email, unique), `CB_User_UUID`, `CB_User_Name`, `CB_Password` (VARCHAR(255) for `password_hash()`; NULL until a new user sets it), `CB_User_Role` (`admin` / `overlord`), `CB_Password_Reset_ID`, `CB_Password_Reset_Timer` (when the emailed link expires) |
+| `CB_Created_Books` | One row per contact book | `CB_Book_UUID`, `CB_Book_Name_About`, `CB_Base_Directory`, `CB_Book_Cover_Picture`, `CB_Book_Description`, `CB_Book_Admins` (comma-separated emails of the users who can manage the book; the creator is added automatically, along with any additional admins entered on the Create a New Book form) |
 | `CB_Book_Entry` | One row per entry added to a book | `ENTRY_UUID`, `ENTRY_Book_Parent_UUID` (= `CB_Book_UUID`), `ENTRY_Name`, `ENTRY_Emails`, `ENTRY_Street_Address`, `ENTRY_City`, `ENTRY_State`, `ENTRY_Zip`, `ENTRY_Phone`, `ENTRY_Notes` |
 
 Each table also has an `AUTO_INCREMENT` primary key (`CB_User_ID`, `CB_Book_ID`, `ENTRY_ID`).
@@ -31,7 +32,9 @@ folder listings and raise PHP's upload limits.
 ## Admin login
 
 The **Admin** link on the home page opens the login panel. After logging in, users go to `admin.php`;
-tools there are shown only to users with the `admin` role. Sessions time out after 30 minutes idle.
+admins see the admin tools, and overlords also see overlord-level tools (such as **Create a New User**).
+**Manage a Book** lists the books whose `CB_Book_Admins` include the logged-in user's email; overlords see every book.
+Sessions time out after 30 minutes idle.
 
 ## Forgot password
 
