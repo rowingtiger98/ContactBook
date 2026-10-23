@@ -1,2 +1,6 @@
 # Real credentials - see config.example.php
 config.php
+
+# Book folders (books/<book uuid>/) are created on the server by create_book.php
+/books/*
+!/books/.htaccess

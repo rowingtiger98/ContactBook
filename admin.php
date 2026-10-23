@@ -3,6 +3,10 @@ include('session.php');
 
 $is_admin = ($login_user_role === 'admin');
 $panel_name = $is_admin ? 'Administrative Panel' : 'Account Panel';
+
+// One-time message from another admin page (e.g. "book created").
+$flash_message = $_SESSION['flash_message'] ?? '';
+unset($_SESSION['flash_message']);
 ?>
 <!DOCTYPE HTML>
 <html>
@@ -24,6 +28,9 @@ $panel_name = $is_admin ? 'Administrative Panel' : 'Account Panel';
 			<section id="main" class="wrapper">
 				<div class="inner">
 					<h3><?php echo $panel_name; ?> - <?php echo htmlspecialchars($login_username); ?> (<?php echo htmlspecialchars($login_user_role); ?>)</h3>
+					<?php if ($flash_message !== '') { ?>
+						<p class="flash_message"><?php echo htmlspecialchars($flash_message); ?></p>
+					<?php } ?>
 				</div>
 			</section>
 
@@ -35,13 +42,22 @@ $panel_name = $is_admin ? 'Administrative Panel' : 'Account Panel';
 						<div class="4u 12u$(medium)">
 							<section class="post">
 								<div class="content">
+									<h3>Create a New Book</h3>
+									<p>Start a new contact book for someone. Each book gets its own folder on the server.</p>
+									<a href="create_book.php" class="button fit special">Create a Book</a>
+								</div>
+							</section>
+						</div>
+						<div class="4u 12u$(medium)">
+							<section class="post">
+								<div class="content">
 									<h3>Manage Contacts</h3>
 									<p>Add, view, edit and delete entries in the ContactBook database.</p>
 									<a href="#" class="button fit special">Coming Soon...</a>
 								</div>
 							</section>
 						</div>
-						<div class="4u 12u$(medium)">
+						<div class="4u$ 12u$(medium)">
 							<section class="post">
 								<div class="content">
 									<h3>Download Contacts</h3>
@@ -50,7 +66,7 @@ $panel_name = $is_admin ? 'Administrative Panel' : 'Account Panel';
 								</div>
 							</section>
 						</div>
-						<div class="4u$ 12u$(medium)">
+						<div class="4u 12u$(medium)">
 							<section class="post">
 								<div class="content">
 									<h3>User Accounts</h3>

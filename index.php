@@ -1,6 +1,9 @@
 <?php
 include('login.php'); // Handles the ADMIN login panel
+require_once 'bookFunctions.php';
 $admin_link = empty($_SESSION['login_user']) ? '#loginPanel' : 'admin.php';
+
+$books = list_books();
 ?>
 <!DOCTYPE HTML>
 <html>
@@ -25,10 +28,37 @@ $admin_link = empty($_SESSION['login_user']) ? '#loginPanel' : 'admin.php';
 			</header>
 
 		<!-- Main -->
-			<section id="main" class="wrapper style5">
-				<div class="inner hello">
-					<span class="bold_heading"><?php echo 'Hello World'; ?></span>
-					<p>Today is <?php echo date('l, F j, Y'); ?>.</p>
+			<section id="main" class="wrapper">
+				<div class="inner">
+					<span class="bold_heading">Contact Books</span>
+					<p>Choose the book you'd like to add your information to.</p>
+				</div>
+			</section>
+
+		<!-- One card per book in CB_Created_Books -->
+			<section id="books" class="wrapper style2">
+				<div class="inner">
+					<?php if (empty($books)) { ?>
+					<p>There are no contact books yet. Please check back soon.</p>
+					<?php } else { ?>
+					<div class="row uniform tools_row">
+						<?php foreach ($books as $i => $book) {
+							$summary = summarize_book_description($book['CB_Book_Description']);
+							$last_in_row = ($i % 3 === 2) ? '$' : ''; ?>
+						<div class="4u<?php echo $last_in_row; ?> 12u$(medium)">
+							<section class="post">
+								<div class="content">
+									<h3><?php echo htmlspecialchars($book['CB_Book_Name_About']); ?></h3>
+									<?php if ($summary !== '') { ?>
+									<p><?php echo htmlspecialchars($summary); ?></p>
+									<?php } ?>
+									<a href="add_entry.php?book=<?php echo urlencode($book['CB_Book_UUID']); ?>" class="button fit special">Add Your Information</a>
+								</div>
+							</section>
+						</div>
+						<?php } ?>
+					</div>
+					<?php } ?>
 				</div>
 			</section>
 

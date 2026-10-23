@@ -27,4 +27,5 @@ $login_username  = $row['CB_Username'];
 $login_userid    = $row['CB_User_ID'];
 $login_user_role = $row['CB_User_Role'];
 
+$stmt = null;       // Release the statement too - it holds a reference to the connection
 $connection = null; // Closing Connection

@@ -93,6 +93,139 @@
 }
 
 /* Password Reset Page */
-.reset_panel {
+.reset_panel,
+.form_panel {
   max-width: 40em;
+}
+
+.flash_message {
+  margin: 0.5em 0 0 0;
+  padding: 0.5em 0.75em;
+  border-left: solid 3px #4b6f9d;
+}
+
+.field_note {
+  font-size: 0.85em;
+  margin: 0.25em 0 0 0;
+}
+
+.book_photo_preview {
+  display: block;
+  max-width: 100%;
+  max-height: 16em;
+  margin-top: 0.75em;
+  border-radius: 4px;
+}
+
+.book_photo_placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 12em;
+  height: 9em;
+  margin: 0.75em 0 0 0;
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+  color: #aaa;
+  cursor: pointer;
+  font-weight: normal;
+  text-transform: none;
+}
+
+.book_photo_placeholder .fa {
+  font-size: 3em;
+  margin-bottom: 0.25em;
+}
+
+.book_photo_placeholder span {
+  font-size: 0.85em;
+}
+
+/* `display` above would otherwise override the hidden attribute (this is what showed
+   the broken-image icon before a photo was chosen). */
+.book_photo_preview[hidden],
+.book_photo_placeholder[hidden] {
+  display: none;
+}
+
+/* Add Your Information page (add_entry.php) */
+.entry_email_row {
+  display: flex;
+  align-items: center;
+  margin: 0 0 0.5em 0;
+}
+
+  .entry_email_row input {
+    flex: 1;
+  }
+
+  .entry_email_row .button {
+    margin-left: 0.5em;
+  }
+
+.entry_email_row [hidden],
+#entry_email_add[hidden] {
+  display: none;
+}
+
+/* Previews of the photos chosen for an entry */
+.entry_photo_previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin-top: 0.75em;
+}
+
+  .entry_photo_previews img {
+    width: 6em;
+    height: 6em;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+
+/* Full-page "Saving your information..." spinner (add_entry.js) */
+.entry_saving {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1em;
+  background: rgba(255, 255, 255, 0.85);
+  text-align: center;
+}
+
+  .entry_saving[hidden] {
+    display: none;
+  }
+
+  .entry_saving > div {
+    max-width: 24em;
+    padding: 2em;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 0 0 1em rgba(0, 0, 0, 0.15);
+  }
+
+  .entry_saving .fa {
+    color: #4b6f9d;
+    margin-bottom: 0.5em;
+  }
+
+  .entry_saving p {
+    margin: 0;
+  }
+
+/* Spam trap - kept off-screen rather than display:none, which some bots skip. */
+.entry_website {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
 }
