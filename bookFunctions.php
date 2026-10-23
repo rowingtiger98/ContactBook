@@ -28,7 +28,7 @@ const BOOK_PHOTO_MAX_BYTES     = 10 * 1048576;  // 10 MB - keep in step with .us
 const BOOK_PHOTO_MAX_PIXELS    = 24000000;      // 24 megapixels - larger images need too much memory to resize
 const BOOK_PHOTO_MAX_DIMENSION = 1600;          // saved photos are shrunk to fit 1600 x 1600
 const BOOK_ADMINS_SEPARATOR    = ',';           // CB_Book_Admins: "a@example.com,b@example.com"
-const BOOK_ADMINS_MAX_COUNT    = 20;            // additional admins entered when creating a book
+const BOOK_ADMINS_MAX_COUNT    = 20;            // emails entered in a book's admins box at one time
 const BOOK_ADMIN_EMAIL_MAX_LENGTH = 128;        // same as CB_Username
 
 // Written into every book's base directory. Files uploaded to a book must never
@@ -216,7 +216,7 @@ function save_book_photo(string $tmp, int $type, string $dir, string $basename =
 /* Returns:     Nothing                                        */
 /* *********************************************************** */
 function remove_book_directory(string $dir): void {
-    foreach (['.htaccess', 'cover.jpg', 'cover.png'] as $file) {
+    foreach (['.htaccess', 'cover.jpg', 'cover.png', 'cover_new.jpg', 'cover_new.png'] as $file) {
         if (is_file($dir . '/' . $file)) {
             unlink($dir . '/' . $file);
         }
@@ -410,7 +410,7 @@ function parse_book_admin_emails(string $text): array {
     $emails = array_values(array_unique(array_map('strtolower',
         preg_split('/[\s,;]+/u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [])));
     if (count($emails) > BOOK_ADMINS_MAX_COUNT) {
-        return ['emails' => [], 'error' => 'Please enter at most ' . BOOK_ADMINS_MAX_COUNT . ' additional admins.'];
+        return ['emails' => [], 'error' => 'Please enter at most ' . BOOK_ADMINS_MAX_COUNT . ' email addresses.'];
     }
     foreach ($emails as $email) {
         if (strlen($email) > BOOK_ADMIN_EMAIL_MAX_LENGTH || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
@@ -431,13 +431,14 @@ function parse_book_admin_emails(string $text): array {
 /* Inputs:      $email - the user's username.                  */
 /*              $all - true to return every book (overlords).  */
 /* Returns:     Rows with CB_Book_UUID, CB_Book_Name_About,    */
-/*              CB_Book_Description and CB_Book_Admins.        */
+/*              CB_Book_Description, CB_Book_Admins and        */
+/*              CB_Book_Cover_Picture.                         */
 /* *********************************************************** */
 function list_books_for_admin(string $email, bool $all = false): array {
     $email = strtolower(trim($email));
     $connection = Create_SQL_PHP_DataObject();
     $stmt = $connection->query(
-        'SELECT CB_Book_UUID, CB_Book_Name_About, CB_Book_Description, CB_Book_Admins
+        'SELECT CB_Book_UUID, CB_Book_Name_About, CB_Book_Description, CB_Book_Admins, CB_Book_Cover_Picture
          FROM CB_Created_Books
          ORDER BY CB_Book_Name_About, CB_Book_ID'
     );
@@ -449,4 +450,134 @@ function list_books_for_admin(string $email, bool $all = false): array {
     $stmt = null;
     $connection = null;
     return $books;
+}
+
+/* *********************************************************** */
+/* Function:    book_cover_url                                 */
+/* Description: The address of a book's cover photo, relative  */
+/*              to the site, with the file's time added so     */
+/*              browsers fetch a replaced photo again.         */
+/* Inputs:      $uuid - the book's CB_Book_UUID.               */
+/*              $filename - its CB_Book_Cover_Picture.         */
+/* Returns:     e.g. books/<uuid>/cover.jpg?v=1761234567, or   */
+/*              '' if there's no photo.                        */
+/* *********************************************************** */
+function book_cover_url(string $uuid, ?string $filename): string {
+    if ($filename === null || $filename === '' || !is_file(book_directory_path($uuid) . '/' . $filename)) {
+        return '';
+    }
+    return BOOKS_DIR_NAME . '/' . rawurlencode($uuid) . '/' . rawurlencode($filename)
+        . '?v=' . filemtime(book_directory_path($uuid) . '/' . $filename);
+}
+
+/* *********************************************************** */
+/* Function:    update_book                                    */
+/* Description: Saves changes made on the Manage a Book page:  */
+/*              name, description, admins and cover photo. A   */
+/*              new photo is saved as cover_new.* first and    */
+/*              only replaces the old one once the row is      */
+/*              saved, so a failure leaves the book unchanged. */
+/*              The caller must check that the user may manage */
+/*              the book.                                      */
+/* Inputs:      $uuid - the book's CB_Book_UUID.               */
+/*              $name, $description - as on Create a Book.     */
+/*              $admins_text - every admin's email, separated  */
+/*              by commas, semicolons, spaces or new lines.    */
+/*              $photo - optional $_FILES entry for a new      */
+/*              photo. $remove_photo - true to remove it.      */
+/*              $editor_email - the user saving the changes.   */
+/*              $editor_is_overlord - overlords may remove     */
+/*              themselves; admins may not (they'd lose the    */
+/*              book).                                         */
+/* Returns:     ['success' => bool, 'error' => string,         */
+/*               'name', 'description', 'admins' => the        */
+/*               cleaned fields, to show again on an error]    */
+/* *********************************************************** */
+function update_book(string $uuid, string $name, string $description, string $admins_text, ?array $photo,
+                     bool $remove_photo, string $editor_email, bool $editor_is_overlord): array {
+    $name        = trim(preg_replace('/\s+/u', ' ', $name) ?? '');
+    $description = clean_book_description($description);
+    $fail = function (string $error) use (&$name, &$description, &$admins_text): array {
+        return ['success' => false, 'error' => $error, 'name' => $name, 'description' => $description,
+                'admins' => $admins_text];
+    };
+
+    $error = validate_book_name($name);
+    if ($error !== '') {
+        return $fail($error);
+    }
+    if (mb_strlen($description, 'UTF-8') > BOOK_DESCRIPTION_MAX_LENGTH) {
+        return $fail('The description can be at most ' . BOOK_DESCRIPTION_MAX_LENGTH . ' characters.');
+    }
+    $parsed = parse_book_admin_emails($admins_text);
+    if ($parsed['error'] !== '') {
+        return $fail($parsed['error']);
+    }
+    if (empty($parsed['emails'])) {
+        return $fail('Please enter at least one admin for this book.');
+    }
+    if (!$editor_is_overlord && !in_array(strtolower(trim($editor_email)), $parsed['emails'], true)) {
+        return $fail('You can\'t remove yourself as an admin. Ask another admin of this book to remove you.');
+    }
+    $upload = check_book_photo_upload($photo);
+    if ($upload['error'] !== '') {
+        return $fail($upload['error']);
+    }
+
+    try {
+        $connection = Create_SQL_PHP_DataObject();
+        $stmt = $connection->prepare('SELECT CB_Book_Cover_Picture FROM CB_Created_Books WHERE CB_Book_UUID = ?');
+        $stmt->execute([$uuid]);
+        $row = $stmt->fetch();
+    } catch (PDOException $e) {
+        error_log('ContactBook: could not load book ' . $uuid . ': ' . $e->getMessage());
+        return $fail('The book could not be saved. Please try again.');
+    }
+    if (!$row) {
+        return $fail('That book could not be found.');
+    }
+    $dir       = book_directory_path($uuid);
+    $old_photo = $row['CB_Book_Cover_Picture'];
+    $new_photo = $old_photo;  // keep the current photo unless one was chosen or removed
+    $temp_photo = '';
+
+    if ($upload['present']) {
+        $temp_photo = save_book_photo($upload['tmp'], $upload['type'], $dir, 'cover_new');
+        if ($temp_photo === '') {
+            error_log('ContactBook: could not save new photo for book ' . $uuid);
+            return $fail('The photo could not be processed. Please try a different image.');
+        }
+        $new_photo = 'cover.' . pathinfo($temp_photo, PATHINFO_EXTENSION);
+    } elseif ($remove_photo) {
+        $new_photo = null;
+    }
+
+    try {
+        $stmt = $connection->prepare(
+            'UPDATE CB_Created_Books
+             SET CB_Book_Name_About = ?, CB_Book_Description = ?, CB_Book_Admins = ?, CB_Book_Cover_Picture = ?
+             WHERE CB_Book_UUID = ?'
+        );
+        $stmt->execute([$name, ($description === '') ? null : $description, join_book_admins($parsed['emails']),
+                        $new_photo, $uuid]);
+    } catch (PDOException $e) {
+        error_log('ContactBook: could not update book ' . $uuid . ': ' . $e->getMessage());
+        if ($temp_photo !== '') {
+            unlink($dir . '/' . $temp_photo);
+        }
+        return $fail('The book could not be saved. Please try again.');
+    }
+    $stmt = null;
+    $connection = null;
+
+    // The row is saved - now swap the photo files to match it.
+    if ($old_photo !== null && $old_photo !== '' && $old_photo !== $new_photo && is_file($dir . '/' . basename($old_photo))) {
+        unlink($dir . '/' . basename($old_photo));
+    }
+    if ($temp_photo !== '' && !rename($dir . '/' . $temp_photo, $dir . '/' . $new_photo)) {
+        error_log('ContactBook: could not rename ' . $temp_photo . ' to ' . $new_photo . ' for book ' . $uuid);
+    }
+
+    return ['success' => true, 'error' => '', 'name' => $name, 'description' => $description,
+            'admins' => join_book_admins($parsed['emails'])];
 }

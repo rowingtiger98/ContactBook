@@ -33,7 +33,12 @@ folder listings and raise PHP's upload limits.
 
 The **Admin** link on the home page opens the login panel. After logging in, users go to `admin.php`;
 admins see the admin tools, and overlords also see overlord-level tools (such as **Create a New User**).
-**Manage a Book** lists the books whose `CB_Book_Admins` include the logged-in user's email; overlords see every book.
+**Manage a Book** lists the books whose `CB_Book_Admins` include the logged-in user's email; overlords see every book. Choosing a book opens
+its **Book Details** (name, description, admins and cover photo) and a table of its **Entries**: name, contact,
+the start of the message and the number of photos. Each entry has **Edit** and **Delete** buttons:
+`edit_entry.php` changes any field and removes or adds photos (up to 5 in all), and delete asks first,
+then removes the entry and its photos. Admins can't remove themselves from a book;
+overlords can.
 Sessions time out after 30 minutes idle.
 
 ## Forgot password

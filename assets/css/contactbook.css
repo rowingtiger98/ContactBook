@@ -229,3 +229,134 @@
   height: 1px;
   overflow: hidden;
 }
+
+.book_photo_remove {
+  margin-top: 0.75em;
+}
+
+/* Manage a Book - entries table */
+.entries_table td {
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.entries_table .entries_photos {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.entries_table .entries_actions {
+  white-space: nowrap;
+  text-align: right;
+}
+
+  .entries_table .entries_actions .button {
+    padding: 0 0.9em;
+    margin-left: 0.25em;
+  }
+
+/* Text for screen readers only */
+.sr_only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Edit Entry page (edit_entry.php) - the entry's current photos, each with a Remove box */
+.entry_photo_current {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1em;
+  margin-bottom: 1em;
+}
+
+  .entry_photo_item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .entry_photo_item img {
+    display: block;
+    width: 8em;
+    height: 8em;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 0.5em;
+  }
+
+.entry_delete_link {
+  margin-top: 1em;
+}
+
+/* Collapsible section (<details>) - a gray box whose heading is the toggle, with a
+   chevron that points down when closed and up when open. */
+.collapsible_section {
+  background: #e9e9e9;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 1em 1.25em;
+  margin-bottom: 2em;
+}
+
+  /* The theme's inputs are light gray - make them white so they stand out on the box. */
+  .collapsible_section input[type="text"],
+  .collapsible_section input[type="email"],
+  .collapsible_section textarea,
+  .collapsible_section select {
+    background: #fff;
+  }
+
+  .collapsible_section > summary + * {
+    margin-top: 1.25em;
+  }
+
+  /* Tables keep their white and gray rows, with no extra space under the last one. */
+  .collapsible_section table {
+    background: #fff;
+    margin-bottom: 0;
+  }
+
+  .collapsible_section .collapsible_body > :last-child {
+    margin-bottom: 0;
+  }
+
+.collapsible_section > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  list-style: none;
+}
+
+  .collapsible_section > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .collapsible_section > summary h3 {
+    margin: 0;
+  }
+
+  /* Round button behind the chevron - same gray as the odd rows of the theme's tables (main.css). */
+  .collapsible_section > summary .fa {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2em;
+    height: 2em;
+    border-radius: 50%;
+    background-color: #cbcbcb;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+  }
+
+  .collapsible_section > summary:hover .fa {
+    background-color: #b8b8b8;
+  }
+
+.collapsible_section[open] > summary .fa {
+  transform: rotate(180deg);
+}

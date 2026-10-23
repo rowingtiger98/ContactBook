@@ -1,42 +1,57 @@
 // -------------------------------------------------------------------------------------
 // create_book.js
-// Client-side helpers for the Create a New Book page (create_book.php).
+// Client-side helpers for the book photo on the Create a New Book page (create_book.php)
+// and the Book Details form on the Manage a Book page (manage_book.php).
 // -------------------------------------------------------------------------------------
 
 var BOOK_PHOTO_MAX_BYTES = 10 * 1048576;  // keep in step with bookFunctions.php
 
 // -------------------------------------------------------------------------------------
 // Function: 	ShowBookPhotoPreview
-// Description: Shows a preview of the chosen photo (or the camera placeholder when
-//              there isn't one), and clears the choice right away if it's too large
-//              (the server re-checks everything on Save).
+// Description: Shows a preview of the chosen photo. With no photo chosen it shows the
+//              book's current photo (data-current-src, on Manage a Book) unless
+//              "Remove this photo" is ticked, or else the camera placeholder. Clears the
+//              choice right away if it's too large (the server re-checks on Save).
 // -------------------------------------------------------------------------------------
 function ShowBookPhotoPreview() {
+  var input = document.getElementById('book_photo');
   var preview = document.getElementById('book_photo_preview');
   var placeholder = document.getElementById('book_photo_placeholder');
-  var file = this.files && this.files[0];
+  var remove = document.getElementById('remove_photo');
+  var currentSrc = preview.getAttribute('data-current-src');
+  var file = input.files && input.files[0];
 
-  if (preview.src) {
+  if (preview.src && preview.src.indexOf('blob:') === 0) {
     URL.revokeObjectURL(preview.src);
   }
-  preview.hidden = true;
-  preview.removeAttribute('src');
-  placeholder.hidden = false;
 
-  if (!file) {
-    return;
-  }
-  if (file.size > BOOK_PHOTO_MAX_BYTES) {
+  if (file && file.size > BOOK_PHOTO_MAX_BYTES) {
     alert('That photo is too large. Please choose one under ' + (BOOK_PHOTO_MAX_BYTES / 1048576) + ' MB.');
-    this.value = '';
-    return;
+    input.value = '';
+    file = null;
   }
 
-  preview.src = URL.createObjectURL(file);
-  preview.hidden = false;
-  placeholder.hidden = true;
+  if (remove) {
+    // A new photo replaces the current one, so "remove" doesn't apply.
+    remove.disabled = !!file;
+    if (file) {
+      remove.checked = false;
+    }
+  }
+
+  var src = file ? URL.createObjectURL(file) : ((currentSrc && !(remove && remove.checked)) ? currentSrc : '');
+  if (src) {
+    preview.src = src;
+    preview.hidden = false;
+    placeholder.hidden = true;
+  } else {
+    preview.removeAttribute('src');
+    preview.hidden = true;
+    placeholder.hidden = false;
+  }
 }
 
 $(document).ready(function() {
-  $("#book_photo").on('change', ShowBookPhotoPreview);
+  $('#book_photo').on('change', ShowBookPhotoPreview);
+  $('#remove_photo').on('change', ShowBookPhotoPreview);
 });

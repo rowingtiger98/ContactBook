@@ -347,3 +347,263 @@ function create_entry(string $book_uuid, array $form, ?array $photo_files = null
 
     return ['success' => true, 'error' => '', 'entry' => $entry];
 }
+
+/* *********************************************************** */
+/* Function:    list_book_entries                              */
+/* Description: Every entry in a book, oldest first, with how  */
+/*              many photos each one has (counted from its     */
+/*              pictures/<entry uuid>/ folder).                */
+/* Inputs:      $book_uuid - the book's CB_Book_UUID.          */
+/* Returns:     Rows with ENTRY_UUID, ENTRY_Name, ENTRY_Emails,*/
+/*              ENTRY_Phone, ENTRY_Notes and photo_count.      */
+/* *********************************************************** */
+function list_book_entries(string $book_uuid): array {
+    $connection = Create_SQL_PHP_DataObject();
+    $stmt = $connection->prepare(
+        'SELECT ENTRY_UUID, ENTRY_Name, ENTRY_Emails, ENTRY_Phone, ENTRY_Notes
+         FROM CB_Book_Entry
+         WHERE ENTRY_Book_Parent_UUID = ?
+         ORDER BY ENTRY_ID'
+    );
+    $stmt->execute([$book_uuid]);
+    $entries = $stmt->fetchAll();
+    $stmt = null;
+    $connection = null;
+
+    foreach ($entries as &$entry) {
+        $entry['photo_count'] = count(list_entry_photos($book_uuid, (string) $entry['ENTRY_UUID']));
+    }
+    unset($entry);
+    return $entries;
+}
+
+/* *********************************************************** */
+/* Function:    summarize_entry_notes                          */
+/* Description: The start of an entry's message for the        */
+/*              entries table: line breaks become spaces and   */
+/*              anything past $max_length is cut, with "…".    */
+/* Returns:     The summary (not HTML-escaped).                */
+/* *********************************************************** */
+function summarize_entry_notes(?string $notes, int $max_length = 36): string {
+    $text = trim(preg_replace('/\s+/u', ' ', (string) $notes));
+    if (mb_strlen($text, 'UTF-8') <= $max_length) {
+        return $text;
+    }
+    return rtrim(mb_substr($text, 0, $max_length, 'UTF-8')) . '…';
+}
+
+/* *********************************************************** */
+/* Function:    is_uuid                                        */
+/* Description: Whether a string looks like the UUIDs that     */
+/*              generate_uuid_v4() makes.                      */
+/* *********************************************************** */
+function is_uuid(string $value): bool {
+    return (bool) preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', $value);
+}
+
+/* *********************************************************** */
+/* Function:    entry_photo_directory                          */
+/* Description: The full path of an entry's photo folder.     */
+/* Returns:     books/<book uuid>/pictures/<entry uuid>        */
+/* *********************************************************** */
+function entry_photo_directory(string $book_uuid, string $entry_uuid): string {
+    return book_directory_path(basename($book_uuid)) . '/' . BOOK_PICTURES_DIR_NAME . '/' . basename($entry_uuid);
+}
+
+/* *********************************************************** */
+/* Function:    list_entry_photos                              */
+/* Description: An entry's photo filenames, in number order    */
+/*              (photo-1.jpg, photo-2.png, ..., photo-10.jpg). */
+/* Returns:     The filenames (no folder), or [] if none.      */
+/* *********************************************************** */
+function list_entry_photos(string $book_uuid, string $entry_uuid): array {
+    $files = array_map('basename', glob(entry_photo_directory($book_uuid, $entry_uuid) . '/photo-*') ?: []);
+    natsort($files);
+    return array_values($files);
+}
+
+/* *********************************************************** */
+/* Function:    entry_photo_url                                */
+/* Description: The address of one of an entry's photos,       */
+/*              relative to the site, with the file's time     */
+/*              added so browsers fetch a changed photo again. */
+/* *********************************************************** */
+function entry_photo_url(string $book_uuid, string $entry_uuid, string $filename): string {
+    $path = entry_photo_directory($book_uuid, $entry_uuid) . '/' . basename($filename);
+    return BOOKS_DIR_NAME . '/' . rawurlencode($book_uuid) . '/' . BOOK_PICTURES_DIR_NAME . '/' . rawurlencode($entry_uuid)
+        . '/' . rawurlencode(basename($filename)) . '?v=' . (is_file($path) ? filemtime($path) : 0);
+}
+
+/* *********************************************************** */
+/* Function:    find_entry                                     */
+/* Description: Looks up one entry - only if it belongs to the */
+/*              given book.                                    */
+/* Inputs:      $book_uuid, $entry_uuid - the two UUIDs.       */
+/* Returns:     The entry in the same shape as                 */
+/*              clean_entry_form() (to fill the edit form),    */
+/*              plus 'uuid', or null if there's no such entry. */
+/* *********************************************************** */
+function find_entry(string $book_uuid, string $entry_uuid): ?array {
+    if (!is_uuid($book_uuid) || !is_uuid($entry_uuid)) {
+        return null;
+    }
+    $connection = Create_SQL_PHP_DataObject();
+    $stmt = $connection->prepare(
+        'SELECT ENTRY_UUID, ENTRY_Name, ENTRY_Emails, ENTRY_Street_Address, ENTRY_City, ENTRY_State,
+                ENTRY_Zip, ENTRY_Phone, ENTRY_Notes
+         FROM CB_Book_Entry
+         WHERE ENTRY_UUID = ? AND ENTRY_Book_Parent_UUID = ?'
+    );
+    $stmt->execute([$entry_uuid, $book_uuid]);
+    $row = $stmt->fetch();
+    $stmt = null;
+    $connection = null;
+    if (!$row) {
+        return null;
+    }
+    return [
+        'uuid'   => $row['ENTRY_UUID'],
+        'name'   => (string) $row['ENTRY_Name'],
+        'street' => (string) $row['ENTRY_Street_Address'],
+        'city'   => (string) $row['ENTRY_City'],
+        'state'  => (string) $row['ENTRY_State'],
+        'zip'    => (string) $row['ENTRY_Zip'],
+        'phone'  => (string) $row['ENTRY_Phone'],
+        'emails' => clean_entry_emails(explode(',', (string) $row['ENTRY_Emails'])),
+        'notes'  => (string) $row['ENTRY_Notes'],
+    ];
+}
+
+/* *********************************************************** */
+/* Function:    update_entry                                   */
+/* Description: Saves an admin's changes to an entry: the      */
+/*              fields, photos to remove and new photos to     */
+/*              add (at most ENTRY_PHOTOS_MAX_COUNT in all).   */
+/*              New photos are saved first and removed again   */
+/*              if the row can't be saved; removed photos are  */
+/*              only deleted once it is. The caller must check */
+/*              that the user may manage the book.             */
+/* Inputs:      $book_uuid, $entry_uuid - the two UUIDs.       */
+/*              $form - the submitted fields ($_POST).         */
+/*              $photo_files - $_FILES['entry_photos'], or     */
+/*              null. $remove - filenames of photos to remove. */
+/* Returns:     ['success' => bool, 'error' => string,         */
+/*               'entry' => the cleaned fields]                */
+/* *********************************************************** */
+function update_entry(string $book_uuid, string $entry_uuid, array $form, ?array $photo_files, array $remove): array {
+    $entry = clean_entry_form($form);
+    $fail = function (string $error) use (&$entry): array {
+        return ['success' => false, 'error' => $error, 'entry' => $entry];
+    };
+
+    $error = validate_entry($entry);
+    if ($error !== '') {
+        return $fail($error);
+    }
+    $existing = list_entry_photos($book_uuid, $entry_uuid);
+    $remove   = array_values(array_intersect($existing, $remove));  // only this entry's own photos
+    $uploads  = check_entry_photo_uploads($photo_files);
+    if ($uploads['error'] !== '') {
+        return $fail($uploads['error']);
+    }
+    $kept = count($existing) - count($remove);
+    if ($kept + count($uploads['photos']) > ENTRY_PHOTOS_MAX_COUNT) {
+        return $fail('An entry can have at most ' . ENTRY_PHOTOS_MAX_COUNT . ' photos. With the ' . $kept
+            . ' it\'s keeping, you can add ' . max(0, ENTRY_PHOTOS_MAX_COUNT - $kept) . ' more.');
+    }
+
+    // New photos continue the numbering: photo-4.jpg after photo-3.jpg.
+    $dir     = entry_photo_directory($book_uuid, $entry_uuid);
+    $added   = [];
+    $next    = 1;
+    foreach ($existing as $file) {
+        if (preg_match('/^photo-(\d+)\./', $file, $m)) {
+            $next = max($next, (int) $m[1] + 1);
+        }
+    }
+    if ($uploads['photos']) {
+        $pictures_path = dirname($dir);
+        if ((!is_dir($pictures_path) && !mkdir($pictures_path, 0755)) || (!is_dir($dir) && !mkdir($dir, 0755))) {
+            error_log('ContactBook: could not create entry photo directory ' . $dir);
+            return $fail('The photos could not be saved. Please try again.');
+        }
+        foreach ($uploads['photos'] as $photo) {
+            $saved = save_book_photo($photo['tmp'], $photo['type'], $dir, 'photo-' . $next++);
+            if ($saved === '') {
+                error_log('ContactBook: could not save a new photo for entry ' . $entry_uuid);
+                foreach ($added as $file) {
+                    unlink($dir . '/' . $file);
+                }
+                return $fail('The photos could not be saved. Please try again, or try different photos.');
+            }
+            $added[] = $saved;
+        }
+    }
+
+    $null_if_empty = function (string $value): ?string {
+        return ($value === '') ? null : $value;
+    };
+    try {
+        $connection = Create_SQL_PHP_DataObject();
+        $stmt = $connection->prepare(
+            'UPDATE CB_Book_Entry
+             SET ENTRY_Name = ?, ENTRY_Emails = ?, ENTRY_Street_Address = ?, ENTRY_City = ?, ENTRY_State = ?,
+                 ENTRY_Zip = ?, ENTRY_Phone = ?, ENTRY_Notes = ?
+             WHERE ENTRY_UUID = ? AND ENTRY_Book_Parent_UUID = ?'
+        );
+        $stmt->execute([
+            $entry['name'],
+            $null_if_empty(implode(ENTRY_EMAIL_SEPARATOR, $entry['emails'])),
+            $null_if_empty($entry['street']),
+            $null_if_empty($entry['city']),
+            $null_if_empty($entry['state']),
+            $null_if_empty($entry['zip']),
+            $null_if_empty($entry['phone']),
+            $null_if_empty($entry['notes']),
+            $entry_uuid,
+            $book_uuid,
+        ]);
+        $stmt = null;
+        $connection = null;
+    } catch (PDOException $e) {
+        error_log('ContactBook: could not update entry ' . $entry_uuid . ': ' . $e->getMessage());
+        foreach ($added as $file) {
+            unlink($dir . '/' . $file);
+        }
+        return $fail('The entry could not be saved. Please try again.');
+    }
+
+    foreach ($remove as $file) {
+        unlink($dir . '/' . $file);
+    }
+    if (is_dir($dir) && list_entry_photos($book_uuid, $entry_uuid) === []) {
+        rmdir($dir);  // no photos left
+    }
+    return ['success' => true, 'error' => '', 'entry' => $entry];
+}
+
+/* *********************************************************** */
+/* Function:    delete_entry                                   */
+/* Description: Deletes an entry and its photos. The caller    */
+/*              must check that the user may manage the book.  */
+/* Inputs:      $book_uuid, $entry_uuid - the two UUIDs.       */
+/* Returns:     true if the entry was deleted.                 */
+/* *********************************************************** */
+function delete_entry(string $book_uuid, string $entry_uuid): bool {
+    try {
+        $connection = Create_SQL_PHP_DataObject();
+        $stmt = $connection->prepare('DELETE FROM CB_Book_Entry WHERE ENTRY_UUID = ? AND ENTRY_Book_Parent_UUID = ?');
+        $stmt->execute([$entry_uuid, $book_uuid]);
+        $deleted = $stmt->rowCount() > 0;
+        $stmt = null;
+        $connection = null;
+    } catch (PDOException $e) {
+        error_log('ContactBook: could not delete entry ' . $entry_uuid . ': ' . $e->getMessage());
+        return false;
+    }
+    $dir = entry_photo_directory($book_uuid, $entry_uuid);
+    if ($deleted && is_dir($dir)) {
+        remove_entry_photo_directory($dir);
+    }
+    return $deleted;
+}
