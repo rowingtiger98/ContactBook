@@ -342,6 +342,35 @@
     margin-left: 0.25em;
   }
 
+  /* Mark Entered is a small form of its own, so it sits in line with the other buttons */
+  .entries_table .entry_mark_form {
+    display: inline;
+    margin: 0;
+  }
+
+/* State column: green + (new), yellow warning (edited by its author), black check (entered) */
+.entries_table .entries_status {
+  text-align: center;
+  white-space: nowrap;
+  width: 1%;
+}
+
+  .entries_table .entries_status .fa {
+    font-size: 1.25em;
+  }
+
+  .entry_status_new {
+    color: #2e9e44;
+  }
+
+  .entry_status_edited {
+    color: #f2b600;
+  }
+
+  .entry_status_entered {
+    color: #000;
+  }
+
 /* Text for screen readers only */
 .sr_only {
   position: absolute;

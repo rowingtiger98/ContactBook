@@ -36,6 +36,12 @@ const ENTRY_NOTES_MAX_LENGTH   = 2000;
 const ENTRY_PHOTOS_MAX_COUNT   = 5;     // keep in step with add_entry.js; each up to BOOK_PHOTO_MAX_BYTES
 const ENTRY_EDIT_TOKEN_BYTES   = 32;    // edit code in the emailed link: 64 hex characters
 
+// ENTRY_Status - where the book's manager is with each entry (the State column on Manage a Book).
+// Not to be confused with ENTRY_State, the state in the entry's address.
+const ENTRY_STATUS_NEW     = 'NEW';      // just added
+const ENTRY_STATUS_EDITED  = 'EDITED';   // changed by its author (edit link) since it was added or entered
+const ENTRY_STATUS_ENTERED = 'ENTERED';  // the manager has copied it into their contacts
+
 /* *********************************************************** */
 /* Function:    find_book_by_uuid                              */
 /* Description: Looks up the book an entry is being added to.  */
@@ -334,8 +340,8 @@ function create_entry(string $book_uuid, array $form, ?array $photo_files = null
         $stmt = $connection->prepare(
             'INSERT INTO CB_Book_Entry
                 (ENTRY_UUID, ENTRY_Book_Parent_UUID, ENTRY_Name, ENTRY_Emails, ENTRY_Street_Address,
-                 ENTRY_City, ENTRY_State, ENTRY_Zip, ENTRY_Phone, ENTRY_Notes, ENTRY_Edit_Token)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                 ENTRY_City, ENTRY_State, ENTRY_Zip, ENTRY_Phone, ENTRY_Notes, ENTRY_Edit_Token, ENTRY_Status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $entry_uuid,
@@ -349,6 +355,7 @@ function create_entry(string $book_uuid, array $form, ?array $photo_files = null
             $null_if_empty($entry['phone']),
             $null_if_empty($entry['notes']),
             hash('sha256', $edit_token),
+            ENTRY_STATUS_NEW,
         ]);
         $stmt = null;
         $connection = null;
@@ -370,12 +377,13 @@ function create_entry(string $book_uuid, array $form, ?array $photo_files = null
 /*              pictures/<entry uuid>/ folder).                */
 /* Inputs:      $book_uuid - the book's CB_Book_UUID.          */
 /* Returns:     Rows with ENTRY_UUID, ENTRY_Name, ENTRY_Emails,*/
-/*              ENTRY_Phone, ENTRY_Notes and photo_count.      */
+/*              ENTRY_Phone, ENTRY_Notes, ENTRY_Status and     */
+/*              photo_count.                                   */
 /* *********************************************************** */
 function list_book_entries(string $book_uuid): array {
     $connection = Create_SQL_PHP_DataObject();
     $stmt = $connection->prepare(
-        'SELECT ENTRY_UUID, ENTRY_Name, ENTRY_Emails, ENTRY_Phone, ENTRY_Notes
+        'SELECT ENTRY_UUID, ENTRY_Name, ENTRY_Emails, ENTRY_Phone, ENTRY_Notes, ENTRY_Status
          FROM CB_Book_Entry
          WHERE ENTRY_Book_Parent_UUID = ?
          ORDER BY ENTRY_ID'
@@ -405,6 +413,64 @@ function summarize_entry_notes(?string $notes, int $max_length = 36): string {
         return $text;
     }
     return rtrim(mb_substr($text, 0, $max_length, 'UTF-8')) . '…';
+}
+
+/* *********************************************************** */
+/* Function:    entry_status                                   */
+/* Description: An entry's ENTRY_Status, as one of the         */
+/*              ENTRY_STATUS_* values. Entries saved before    */
+/*              the column existed (NULL) count as new.        */
+/* Inputs:      $status - the column's value.                  */
+/* Returns:     ENTRY_STATUS_NEW, _EDITED or _ENTERED.         */
+/* *********************************************************** */
+function entry_status(?string $status): string {
+    return in_array($status, [ENTRY_STATUS_EDITED, ENTRY_STATUS_ENTERED], true) ? $status : ENTRY_STATUS_NEW;
+}
+
+/* *********************************************************** */
+/* Function:    entry_status_icon                              */
+/* Description: The icon for an entry's status in the entries  */
+/*              table: a green "+" (new), a yellow warning     */
+/*              triangle (edited) or a black check (entered),  */
+/*              with the status's name for screen readers and  */
+/*              as a tooltip.                                  */
+/* Inputs:      $status - an ENTRY_STATUS_* value.             */
+/* Returns:     HTML.                                          */
+/* *********************************************************** */
+function entry_status_icon(string $status): string {
+    $icons = [
+        ENTRY_STATUS_NEW     => ['fa-plus', 'entry_status_new', 'New'],
+        ENTRY_STATUS_EDITED  => ['fa-exclamation-triangle', 'entry_status_edited', 'Edited since it was added or entered'],
+        ENTRY_STATUS_ENTERED => ['fa-check', 'entry_status_entered', 'Entered'],
+    ];
+    [$icon, $class, $label] = $icons[entry_status($status)];
+    return '<i class="fa ' . $icon . ' ' . $class . '" title="' . $label . '" aria-hidden="true"></i>'
+         . '<span class="sr_only">' . $label . '</span>';
+}
+
+/* *********************************************************** */
+/* Function:    mark_entry_entered                             */
+/* Description: Sets an entry's ENTRY_Status to ENTERED, once   */
+/*              the book's manager has copied it into their    */
+/*              contacts. The caller must check that the user  */
+/*              may manage the book.                           */
+/* Inputs:      $book_uuid, $entry_uuid - the two UUIDs.       */
+/* Returns:     true if the entry was found and updated.       */
+/* *********************************************************** */
+function mark_entry_entered(string $book_uuid, string $entry_uuid): bool {
+    try {
+        $connection = Create_SQL_PHP_DataObject();
+        $stmt = $connection->prepare(
+            'UPDATE CB_Book_Entry SET ENTRY_Status = ? WHERE ENTRY_UUID = ? AND ENTRY_Book_Parent_UUID = ?'
+        );
+        $stmt->execute([ENTRY_STATUS_ENTERED, $entry_uuid, $book_uuid]);
+        $stmt = null;
+        $connection = null;
+    } catch (PDOException $e) {
+        error_log('ContactBook: could not mark entry ' . $entry_uuid . ' as entered: ' . $e->getMessage());
+        return false;
+    }
+    return find_entry($book_uuid, $entry_uuid) !== null;  // rowCount() is 0 if it was already entered
 }
 
 /* *********************************************************** */
@@ -502,10 +568,13 @@ function find_entry(string $book_uuid, string $entry_uuid): ?array {
 /*              $form - the submitted fields ($_POST).         */
 /*              $photo_files - $_FILES['entry_photos'], or     */
 /*              null. $remove - filenames of photos to remove. */
+/*              $new_status - an ENTRY_STATUS_* to set, or     */
+/*              null to leave ENTRY_Status as it is.           */
 /* Returns:     ['success' => bool, 'error' => string,         */
 /*               'entry' => the cleaned fields]                */
 /* *********************************************************** */
-function update_entry(string $book_uuid, string $entry_uuid, array $form, ?array $photo_files, array $remove): array {
+function update_entry(string $book_uuid, string $entry_uuid, array $form, ?array $photo_files, array $remove,
+                      ?string $new_status = null): array {
     $entry = clean_entry_form($form);
     $fail = function (string $error) use (&$entry): array {
         return ['success' => false, 'error' => $error, 'entry' => $entry];
@@ -563,7 +632,7 @@ function update_entry(string $book_uuid, string $entry_uuid, array $form, ?array
         $stmt = $connection->prepare(
             'UPDATE CB_Book_Entry
              SET ENTRY_Name = ?, ENTRY_Emails = ?, ENTRY_Street_Address = ?, ENTRY_City = ?, ENTRY_State = ?,
-                 ENTRY_Zip = ?, ENTRY_Phone = ?, ENTRY_Notes = ?
+                 ENTRY_Zip = ?, ENTRY_Phone = ?, ENTRY_Notes = ?, ENTRY_Status = COALESCE(?, ENTRY_Status)
              WHERE ENTRY_UUID = ? AND ENTRY_Book_Parent_UUID = ?'
         );
         $stmt->execute([
@@ -575,6 +644,7 @@ function update_entry(string $book_uuid, string $entry_uuid, array $form, ?array
             $null_if_empty($entry['zip']),
             $null_if_empty($entry['phone']),
             $null_if_empty($entry['notes']),
+            $new_status,
             $entry_uuid,
             $book_uuid,
         ]);

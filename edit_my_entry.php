@@ -41,7 +41,8 @@ if ($found === null) {
             $entry      = clean_entry_form($_POST);  // nothing saved - just keeps what they typed
         } elseif (isset($_POST['save_entry'])) {
             $remove = is_array($_POST['remove_photos'] ?? null) ? array_filter($_POST['remove_photos'], 'is_string') : [];
-            $result = update_entry($book_uuid, $entry_uuid, $_POST, $_FILES['entry_photos'] ?? null, $remove);
+            // Flags the entry for the book's manager, who may need to copy the changes.
+            $result = update_entry($book_uuid, $entry_uuid, $_POST, $_FILES['entry_photos'] ?? null, $remove, ENTRY_STATUS_EDITED);
             if ($result['success']) {
                 $_SESSION['my_entry_saved'] = $entry_uuid;
                 header('Location: ' . $page_url);

@@ -198,6 +198,7 @@ if ($selected_book !== null) {
 								<table class="entries_table">
 									<thead>
 										<tr>
+											<th class="entries_status">State</th>
 											<th>Name</th>
 											<th>Contact</th>
 											<th>Message</th>
@@ -207,7 +208,9 @@ if ($selected_book !== null) {
 									</thead>
 									<tbody>
 										<?php foreach ($entries as $entry) { ?>
+										<?php $status = entry_status($entry['ENTRY_Status']); ?>
 										<tr>
+											<td class="entries_status"><?php echo entry_status_icon($status); ?></td>
 											<td><?php echo htmlspecialchars($entry['ENTRY_Name']); ?></td>
 											<td>
 												<?php foreach (array_filter(array_map('trim', explode(',', (string) $entry['ENTRY_Emails']))) as $email) { ?>
@@ -221,6 +224,15 @@ if ($selected_book !== null) {
 											<td class="entries_actions">
 												<a href="<?php echo htmlspecialchars($entry_url); ?>" class="button small" title="Edit this entry"
 													aria-label="Edit <?php echo htmlspecialchars($entry['ENTRY_Name']); ?>'s entry"><i class="fa fa-pencil" aria-hidden="true"></i></a>
+												<form action="mark_entry_entered.php" method="post" class="entry_mark_form">
+													<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(app_csrf_token()); ?>" />
+													<input type="hidden" name="book" value="<?php echo htmlspecialchars($selected_uuid); ?>" />
+													<input type="hidden" name="entry" value="<?php echo htmlspecialchars($entry['ENTRY_UUID']); ?>" />
+													<button type="submit" class="button small entry_mark_entered"
+														title="<?php echo $status === ENTRY_STATUS_ENTERED ? 'Already entered' : 'Mark this entry as entered in your contacts'; ?>"
+														aria-label="Mark <?php echo htmlspecialchars($entry['ENTRY_Name']); ?>'s entry as entered"
+														<?php if ($status === ENTRY_STATUS_ENTERED) { ?>disabled<?php } ?>>Mark Entered</button>
+												</form>
 												<a href="<?php echo htmlspecialchars($entry_url . '&delete=1'); ?>" class="button small" title="Delete this entry"
 													aria-label="Delete <?php echo htmlspecialchars($entry['ENTRY_Name']); ?>'s entry"><i class="fa fa-trash" aria-hidden="true"></i></a>
 											</td>
@@ -258,6 +270,7 @@ if ($selected_book !== null) {
 			<script src="assets/js/main.js"></script>
 			<script src="<?php echo asset_url('assets/js/photo_resize.js'); ?>"></script>
 			<script src="<?php echo asset_url('assets/js/create_book.js'); ?>"></script>
+			<script src="<?php echo asset_url('assets/js/manage_book.js'); ?>"></script>
 
 	</body>
 </html>
