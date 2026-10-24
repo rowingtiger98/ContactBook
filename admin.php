@@ -13,7 +13,7 @@ unset($_SESSION['flash_message']);
 <!DOCTYPE HTML>
 <html>
 	<head>
-		<title>ContactBook - Admin</title>
+		<title>Contact Book - Admin</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="stylesheet" href="assets/css/main.css" />
@@ -82,7 +82,7 @@ unset($_SESSION['flash_message']);
 						<?php } ?>
 					</div>
 					<?php } else { ?>
-					<p>Your account does not have admin rights. Contact a ContactBook administrator if you need access to the admin tools.</p>
+					<p>Your account does not have admin rights. Contact a Contact Book administrator if you need access to the admin tools.</p>
 					<?php } ?>
 				</div>
 			</section>
@@ -90,7 +90,7 @@ unset($_SESSION['flash_message']);
 		<!-- Footer -->
 			<footer id="footer">
 				<div class="inner">
-					<p class="copyright">&copy; <?php echo date('Y'); ?> ContactBook. All rights reserved.</p>
+					<p class="copyright">&copy; <?php echo date('Y'); ?> Contact Book. All rights reserved.</p>
 				</div>
 			</footer>
 

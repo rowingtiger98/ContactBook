@@ -69,7 +69,7 @@ $emails = $entry['emails'] ?: [''];  // always at least one email box
 <!DOCTYPE HTML>
 <html>
 	<head>
-		<title>ContactBook - <?php echo $confirm_delete ? 'Delete Entry' : 'Edit Entry'; ?></title>
+		<title>Contact Book - <?php echo $confirm_delete ? 'Delete Entry' : 'Edit Entry'; ?></title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="stylesheet" href="assets/css/main.css" />
@@ -109,7 +109,7 @@ $emails = $entry['emails'] ?: [''];  // always at least one email box
 				<?php } else { ?>
 				<!-- Edit Entry -->
 					<span class="bold_heading">Edit Entry</span>
-					<p>In the book for <strong><?php echo htmlspecialchars($book['CB_Book_Name_About']); ?></strong>. Only the name is required.</p>
+					<p>In the book for <strong><?php echo htmlspecialchars($book['CB_Book_Name_About']); ?></strong>. The name and an email address are required.</p>
 
 					<form action="<?php echo htmlspecialchars($page_url); ?>" method="post" enctype="multipart/form-data" id="entry_form">
 						<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(app_csrf_token()); ?>" />
@@ -151,7 +151,7 @@ $emails = $entry['emails'] ?: [''];  // always at least one email box
 									<div class="entry_email_row">
 										<input type="email" name="entry_emails[]" id="entry_email_<?php echo $i + 1; ?>"
 											value="<?php echo htmlspecialchars($email); ?>" autocomplete="off"
-											<?php if ($i > 0) { ?>aria-label="Email <?php echo $i + 1; ?>"<?php } ?> />
+											<?php if ($i === 0) { ?>required<?php } else { ?>aria-label="Email <?php echo $i + 1; ?>"<?php } ?> />
 										<button type="button" class="button small entry_email_remove" title="Remove this email"
 											aria-label="Remove this email"<?php if ($i === 0) { ?> hidden<?php } ?>><i class="fa fa-minus" aria-hidden="true"></i></button>
 									</div>
@@ -221,7 +221,7 @@ $emails = $entry['emails'] ?: [''];  // always at least one email box
 		<!-- Footer -->
 			<footer id="footer">
 				<div class="inner">
-					<p class="copyright">&copy; <?php echo date('Y'); ?> ContactBook. All rights reserved.</p>
+					<p class="copyright">&copy; <?php echo date('Y'); ?> Contact Book. All rights reserved.</p>
 				</div>
 			</footer>
 

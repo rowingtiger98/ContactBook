@@ -44,7 +44,7 @@ $emails = $entry['emails'] ?: [''];  // always at least one email box
 <!DOCTYPE HTML>
 <html>
 	<head>
-		<title>ContactBook - Add Your Information</title>
+		<title>Contact Book - Add Your Information</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="stylesheet" href="assets/css/main.css" />
@@ -54,7 +54,7 @@ $emails = $entry['emails'] ?: [''];  // always at least one email box
 
 		<!-- Header -->
 			<header id="header">
-				<h1><a href="index.php">ContactBook</a></h1>
+				<h1><a href="index.php">Contact Book</a></h1>
 				<nav id="nav">
 					<ul>
 						<li><a href="index.php">Home</a></li>
@@ -79,7 +79,7 @@ $emails = $entry['emails'] ?: [''];  // always at least one email box
 				<?php } else { ?>
 					<span class="bold_heading">Add Your Information</span>
 					<p>For the book for <strong><?php echo htmlspecialchars($book['CB_Book_Name_About']); ?></strong>.
-					Only your name is required.</p>
+					Your name and email address are required.</p>
 
 					<form action="add_entry.php?book=<?php echo urlencode($book['CB_Book_UUID']); ?>" method="post" enctype="multipart/form-data" id="entry_form">
 						<input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(app_csrf_token()); ?>" />
@@ -127,7 +127,7 @@ $emails = $entry['emails'] ?: [''];  // always at least one email box
 									<div class="entry_email_row">
 										<input type="email" name="entry_emails[]" id="entry_email_<?php echo $i + 1; ?>"
 											value="<?php echo htmlspecialchars($email); ?>" autocomplete="<?php echo $i === 0 ? 'email' : 'off'; ?>"
-											<?php if ($i > 0) { ?>aria-label="Email <?php echo $i + 1; ?>"<?php } ?> />
+											<?php if ($i === 0) { ?>required<?php } else { ?>aria-label="Email <?php echo $i + 1; ?>"<?php } ?> />
 										<button type="button" class="button small entry_email_remove" title="Remove this email"
 											aria-label="Remove this email"<?php if ($i === 0) { ?> hidden<?php } ?>><i class="fa fa-minus" aria-hidden="true"></i></button>
 									</div>
@@ -182,7 +182,7 @@ $emails = $entry['emails'] ?: [''];  // always at least one email box
 		<!-- Footer -->
 			<footer id="footer">
 				<div class="inner">
-					<p class="copyright">&copy; <?php echo date('Y'); ?> ContactBook. All rights reserved.</p>
+					<p class="copyright">&copy; <?php echo date('Y'); ?> Contact Book. All rights reserved.</p>
 				</div>
 			</footer>
 

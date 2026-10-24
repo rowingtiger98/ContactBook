@@ -34,7 +34,7 @@ function UpdateEmailRows() {
 // -------------------------------------------------------------------------------------
 function AddEmailRow() {
   var row = $('#entry_email_list .entry_email_row').first().clone();
-  row.find('input').val('').attr('autocomplete', 'off');
+  row.find('input').val('').attr('autocomplete', 'off').prop('required', false);  // only the first box is required
   $('#entry_email_list').append(row);
   UpdateEmailRows();
   row.find('input').trigger('focus');

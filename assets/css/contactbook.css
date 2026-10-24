@@ -11,6 +11,88 @@
   text-transform: uppercase;
 }
 
+/* Front page welcome banner (index.php). The photo's empty wall is on the right,
+   so the text sits there on wide screens and in the middle on small ones.
+   A smaller copy of the photo is used on phones. */
+.welcome_banner {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 32em;
+  height: 70vh;
+  max-height: 44em;
+  padding: 2em 8%;
+  background-color: #e8d3c8;  /* close to the wall color, shown while the photo loads */
+  background-image: url("../images/banner-karola.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
+  .welcome_banner_text {
+    max-width: 28em;
+    padding: 2em;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.8);
+    text-align: center;
+  }
+
+  .welcome_banner_text p {
+    margin-bottom: 1.5em;
+  }
+
+  .welcome_banner_text .button {
+    margin: 0;
+  }
+
+@media screen and (max-width: 736px) {
+  .welcome_banner {
+    justify-content: center;
+    min-height: 24em;
+    height: auto;
+    padding: 2em 16px;
+    background-image: url("../images/banner-karola-small.jpg");
+    background-position: 70% center;
+  }
+
+    .welcome_banner_text {
+      padding: 1.5em;
+    }
+}
+
+/* Front page book cards - a clear border with rounded corners (the theme's own
+   border is very faint). */
+.book_card .content {
+  border: 1px solid #555;
+  border-radius: 8px;
+}
+
+/* Front page search box (index.js) */
+.book_search {
+  margin: 0 0 2em 0;
+}
+
+  .book_search[hidden],
+  .book_search_none[hidden],
+  .book_card_cell[hidden] {
+    display: none;
+  }
+
+  .book_search_none {
+    margin: 1em 0 0 0;
+  }
+
+  /* Same border as the book cards. The #books id is needed to beat the theme's
+     ".wrapper.style2 input" rule, which makes input borders a very faint gray. */
+  #books .book_search input[type="search"] {
+    width: 100%;
+    border: 1px solid #555;
+    border-radius: 8px;
+  }
+
+  #books .book_search input[type="search"]:focus {
+    border-color: #4b6f9d;
+  }
+
 .hello {
   text-align: center;
   padding: 4em 0;

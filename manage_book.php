@@ -72,7 +72,7 @@ if ($selected_book !== null) {
 <!DOCTYPE HTML>
 <html>
 	<head>
-		<title>ContactBook - Manage a Book</title>
+		<title>Contact Book - Manage a Book</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="stylesheet" href="assets/css/main.css" />
@@ -245,7 +245,7 @@ if ($selected_book !== null) {
 		<!-- Footer -->
 			<footer id="footer">
 				<div class="inner">
-					<p class="copyright">&copy; <?php echo date('Y'); ?> ContactBook. All rights reserved.</p>
+					<p class="copyright">&copy; <?php echo date('Y'); ?> Contact Book. All rights reserved.</p>
 				</div>
 			</footer>
 

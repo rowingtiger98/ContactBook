@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE HTML>
 <html>
 	<head>
-		<title>ContactBook - Create a New Book</title>
+		<title>Contact Book - Create a New Book</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="stylesheet" href="assets/css/main.css" />
@@ -111,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		<!-- Footer -->
 			<footer id="footer">
 				<div class="inner">
-					<p class="copyright">&copy; <?php echo date('Y'); ?> ContactBook. All rights reserved.</p>
+					<p class="copyright">&copy; <?php echo date('Y'); ?> Contact Book. All rights reserved.</p>
 				</div>
 			</footer>
 

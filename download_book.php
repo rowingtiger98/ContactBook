@@ -28,7 +28,7 @@ if ($selected_uuid !== '') {
 <!DOCTYPE HTML>
 <html>
 	<head>
-		<title>ContactBook - Download a Book</title>
+		<title>Contact Book - Download a Book</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="stylesheet" href="assets/css/main.css" />
@@ -90,7 +90,7 @@ if ($selected_uuid !== '') {
 		<!-- Footer -->
 			<footer id="footer">
 				<div class="inner">
-					<p class="copyright">&copy; <?php echo date('Y'); ?> ContactBook. All rights reserved.</p>
+					<p class="copyright">&copy; <?php echo date('Y'); ?> Contact Book. All rights reserved.</p>
 				</div>
 			</footer>
 

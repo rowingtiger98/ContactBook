@@ -113,8 +113,8 @@ function clean_entry_form(array $form): array {
 
 /* *********************************************************** */
 /* Function:    validate_entry                                 */
-/* Description: Checks the cleaned fields of an entry. Only    */
-/*              the name is required.                          */
+/* Description: Checks the cleaned fields of an entry. The    */
+/*              name and at least one email are required.      */
 /* Inputs:      $entry - the array from clean_entry_form().    */
 /* Returns:     An error message, or '' if everything is OK.   */
 /* *********************************************************** */
@@ -159,6 +159,9 @@ function validate_entry(array $entry): string {
         }
     }
 
+    if ($entry['emails'] === []) {
+        return 'Please enter an email address.';
+    }
     if (count($entry['emails']) > ENTRY_EMAILS_MAX_COUNT) {
         return 'You can enter at most ' . ENTRY_EMAILS_MAX_COUNT . ' email addresses.';
     }
@@ -651,8 +654,8 @@ function send_book_csv(array $book): void {
     $connection = null;
 
     // e.g. "Mary O'Brien - ContactBook.csv"; plain-ASCII copy for older browsers.
-    $filename = $book['CB_Book_Name_About'] . ' - ContactBook.csv';
-    $ascii    = preg_replace('/[^A-Za-z0-9 ._-]/', '', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $filename) ?: '') ?: 'ContactBook.csv';
+    $filename = $book['CB_Book_Name_About'] . ' - Contact Book.csv';
+    $ascii    = preg_replace('/[^A-Za-z0-9 ._-]/', '', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $filename) ?: '') ?: 'Contact Book.csv';
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="' . $ascii . '"; filename*=UTF-8\'\'' . rawurlencode($filename));
     header('Cache-Control: no-store');  // people's contact details - don't keep copies along the way

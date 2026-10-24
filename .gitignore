@@ -5,6 +5,9 @@ config.php
 /books/*
 !/books/.htaccess
 
+# Full-size original photos - the site uses web-sized copies in assets/images/
+/Photos/
+
 # Database scripts - kept locally, run by hand in phpMyAdmin
 *.sql
 

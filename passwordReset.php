@@ -147,8 +147,8 @@ function send_password_reset_email(string $to, string $link): bool {
     $minutes = RESET_TOKEN_LIFETIME / 60;
     $safe_link = htmlspecialchars($link);
 
-    $subject = 'ContactBook password reset';
-    $message = '<p>We received a request to reset your ContactBook password. Click the link below to choose a new password. '
+    $subject = 'Contact Book password reset';
+    $message = '<p>We received a request to reset your Contact Book password. Click the link below to choose a new password. '
              . "This link can be used once and expires in $minutes minutes.</p>"
              . '<p><a href="' . $safe_link . '">' . $safe_link . '</a></p>'
              . '<p>If you didn\'t ask to reset your password, you can ignore this email - your password won\'t change.</p>';
@@ -176,9 +176,9 @@ function send_welcome_email(string $to, string $name, string $link): bool {
     $safe_name = htmlspecialchars($name);
     $login_url = htmlspecialchars(APP_BASE_URL . '/');
 
-    $subject = 'Your ContactBook account';
+    $subject = 'Your Contact Book account';
     $message = "<p>Hi $safe_name,</p>"
-             . '<p>A ContactBook account has been created for you. Click the link below to choose your password. '
+             . '<p>A Contact Book account has been created for you. Click the link below to choose your password. '
              . "This link can be used once and expires in $days days.</p>"
              . '<p><a href="' . $safe_link . '">' . $safe_link . '</a></p>'
              . '<p>After that, log in with this email address using the <strong>Admin</strong> link at '
