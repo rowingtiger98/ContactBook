@@ -25,6 +25,8 @@ const APP_HOME_URL = 'index.php';
 // redirect reset links to another site.
 const APP_BASE_URL = 'https://www.example.com/contactbook';
 
-// "From" address on password reset emails. Use an address on the site's own
-// domain (set up in Bluehost cPanel > Email Accounts) so mail isn't flagged as spam.
+// "From" address on every email the site sends (password resets, new-user invites,
+// thank-you emails). Use an address on the site's own domain, set up in Bluehost
+// cPanel > Email Accounts, so mail isn't rejected or flagged as spam.
 const MAIL_FROM = 'no-reply@example.com';
+const MAIL_FROM_NAME = 'Contact Book';  // shown as the sender's name

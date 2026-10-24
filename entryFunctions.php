@@ -10,11 +10,18 @@
 /*  Photos added with an entry are saved in                    */
 /*  books/<book uuid>/pictures/<entry uuid>/photo-1.jpg, ...   */
 /*                                                             */
+/*  Each new entry also gets a secret edit code. The person    */
+/*  who made it is emailed a link with the code                */
+/*  (edit_my_entry.php) so they can change their own entry;    */
+/*  only a SHA-256 hash of the code is saved, in               */
+/*  ENTRY_Edit_Token. The link doesn't expire.                 */
+/*                                                             */
 /*  Everything is saved with prepared statements and must be   */
 /*  escaped with htmlspecialchars() wherever it's shown.       */
 /*                                                             */
 /*-------------------------------------------------------------*/
 require_once __DIR__ . '/bookFunctions.php';
+require_once __DIR__ . '/mailFunctions.php';
 
 const ENTRY_NAME_MAX_LENGTH    = 64;    // ENTRY_Name VARCHAR(64)
 const ENTRY_STREET_MAX_LENGTH  = 128;   // ENTRY_Street_Address VARCHAR(128)
@@ -27,6 +34,7 @@ const ENTRY_EMAILS_MAX_COUNT   = 5;     // keep in step with add_entry.js
 const ENTRY_EMAIL_SEPARATOR    = ', ';  // how the addresses are joined in ENTRY_Emails
 const ENTRY_NOTES_MAX_LENGTH   = 2000;
 const ENTRY_PHOTOS_MAX_COUNT   = 5;     // keep in step with add_entry.js; each up to BOOK_PHOTO_MAX_BYTES
+const ENTRY_EDIT_TOKEN_BYTES   = 32;    // edit code in the emailed link: 64 hex characters
 
 /* *********************************************************** */
 /* Function:    find_book_by_uuid                              */
@@ -291,7 +299,9 @@ function remove_entry_photo_directory(string $dir): void {
 /*              null.                                          */
 /* Returns:     ['success' => bool, 'error' => string,         */
 /*               'entry' => the cleaned fields, to refill the  */
-/*               form after an error]                          */
+/*               form after an error, and on success           */
+/*               'entry_uuid' and 'edit_token' - the secret    */
+/*               code for the person's edit link]              */
 /* *********************************************************** */
 function create_entry(string $book_uuid, array $form, ?array $photo_files = null): array {
     $entry = clean_entry_form($form);
@@ -306,6 +316,7 @@ function create_entry(string $book_uuid, array $form, ?array $photo_files = null
     }
 
     $entry_uuid = generate_uuid_v4();
+    $edit_token = bin2hex(random_bytes(ENTRY_EDIT_TOKEN_BYTES));
     $photo_path = '';
     if ($uploads['photos']) {
         $photo_path = save_entry_photos($book_uuid, $entry_uuid, $uploads['photos']);
@@ -323,8 +334,8 @@ function create_entry(string $book_uuid, array $form, ?array $photo_files = null
         $stmt = $connection->prepare(
             'INSERT INTO CB_Book_Entry
                 (ENTRY_UUID, ENTRY_Book_Parent_UUID, ENTRY_Name, ENTRY_Emails, ENTRY_Street_Address,
-                 ENTRY_City, ENTRY_State, ENTRY_Zip, ENTRY_Phone, ENTRY_Notes)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                 ENTRY_City, ENTRY_State, ENTRY_Zip, ENTRY_Phone, ENTRY_Notes, ENTRY_Edit_Token)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $entry_uuid,
@@ -337,6 +348,7 @@ function create_entry(string $book_uuid, array $form, ?array $photo_files = null
             $null_if_empty($entry['zip']),
             $null_if_empty($entry['phone']),
             $null_if_empty($entry['notes']),
+            hash('sha256', $edit_token),
         ]);
         $stmt = null;
         $connection = null;
@@ -348,7 +360,7 @@ function create_entry(string $book_uuid, array $form, ?array $photo_files = null
         return ['success' => false, 'error' => 'Your information could not be saved. Please try again.', 'entry' => $entry];
     }
 
-    return ['success' => true, 'error' => '', 'entry' => $entry];
+    return ['success' => true, 'error' => '', 'entry' => $entry, 'entry_uuid' => $entry_uuid, 'edit_token' => $edit_token];
 }
 
 /* *********************************************************** */
@@ -683,4 +695,91 @@ function send_book_csv(array $book): void {
         ], ',', '"', '');
     }
     fclose($out);
+}
+
+/* *********************************************************** */
+/* Function:    entry_edit_link                                */
+/* Description: The link that lets the person who made an      */
+/*              entry edit it (emailed to them).               */
+/* Inputs:      $entry_uuid - the entry. $token - its edit     */
+/*              code (from create_entry()).                    */
+/* Returns:     The full link, e.g. https://.../edit_my_entry  */
+/*              .php?entry=<uuid>&key=<code>                   */
+/* *********************************************************** */
+function entry_edit_link(string $entry_uuid, string $token): string {
+    return APP_BASE_URL . '/edit_my_entry.php?entry=' . rawurlencode($entry_uuid) . '&key=' . rawurlencode($token);
+}
+
+/* *********************************************************** */
+/* Function:    book_share_link                                */
+/* Description: The book's Add Your Information page, to share */
+/*              with others.                                   */
+/* Returns:     The full link.                                 */
+/* *********************************************************** */
+function book_share_link(string $book_uuid): string {
+    return APP_BASE_URL . '/add_entry.php?book=' . rawurlencode($book_uuid);
+}
+
+/* *********************************************************** */
+/* Function:    find_entry_by_edit_token                       */
+/* Description: Looks up an entry from the person's emailed    */
+/*              edit link - only if the code matches.          */
+/* Inputs:      $entry_uuid, $token - from the link.           */
+/* Returns:     ['book' => the book's row (find_book_by_uuid), */
+/*               'entry' => find_entry()], or null if the link */
+/*              is wrong or the entry is gone.                 */
+/* *********************************************************** */
+function find_entry_by_edit_token(string $entry_uuid, string $token): ?array {
+    if (!is_uuid($entry_uuid) || !preg_match('/^[0-9a-f]{' . (ENTRY_EDIT_TOKEN_BYTES * 2) . '}$/', $token)) {
+        return null;
+    }
+    $connection = Create_SQL_PHP_DataObject();
+    $stmt = $connection->prepare('SELECT ENTRY_Book_Parent_UUID, ENTRY_Edit_Token FROM CB_Book_Entry WHERE ENTRY_UUID = ?');
+    $stmt->execute([$entry_uuid]);
+    $row = $stmt->fetch();
+    $stmt = null;
+    $connection = null;
+    // Entries made before edit links existed have no code, so never match.
+    if (!$row || !is_string($row['ENTRY_Edit_Token']) || !hash_equals($row['ENTRY_Edit_Token'], hash('sha256', $token))) {
+        return null;
+    }
+    $book  = find_book_by_uuid((string) $row['ENTRY_Book_Parent_UUID']);
+    $entry = ($book !== null) ? find_entry($book['CB_Book_UUID'], $entry_uuid) : null;
+    return ($entry !== null) ? ['book' => $book, 'entry' => $entry] : null;
+}
+
+/* *********************************************************** */
+/* Function:    send_entry_thank_you_email                     */
+/* Description: Thanks someone for adding their information to */
+/*              a book, with a link to edit their entry and a  */
+/*              link to share the book with others.            */
+/* Inputs:      $to - their first email address (validated).   */
+/*              $name - their name. $book_name - who the book  */
+/*              is for. $edit_link, $share_link - the links.   */
+/* Returns:     true if the message was accepted for sending.  */
+/* *********************************************************** */
+function send_entry_thank_you_email(string $to, string $name, string $book_name, string $edit_link, string $share_link): bool {
+    $safe_name  = htmlspecialchars($name);
+    $safe_book  = htmlspecialchars($book_name);
+    $safe_edit  = htmlspecialchars($edit_link);
+    $safe_share = htmlspecialchars($share_link);
+
+    $subject = 'Thank you for signing ' . $book_name . '\'s Contact Book';
+    $message = "<p>Hi $safe_name,</p>"
+             . "<p>Thank you for leaving a note in <strong>$safe_book</strong>'s Contact Book! Your information has been saved.</p>"
+
+             . '<p><strong>Need to make a change?</strong><br />'
+             . 'Use the link below to update your details, your note or your photos at any time. '
+             . 'It opens your entry only, and it keeps working, so please keep this email.</p>'
+             . '<p><a href="' . $safe_edit . '">Click Here to edit your entry</a></p>'
+             . '<p>This link is just for you - anyone who has it can change your entry, so please don\'t forward this email.</p>'
+
+             . "<p><strong>Know someone else who'd like to sign?</strong><br />"
+             . "Share the link below with family and friends - copy it into an email, a text message or a social media post. "
+             . "It takes them to $safe_book's book, where they can add their own information.</p>"
+             . '<p><a href="' . $safe_share . '">' . $safe_share . '</a></p>'
+
+             . '<p>Thank you,<br />Contact Book</p>';
+
+    return send_site_email($to, $subject, $message);
 }

@@ -20,6 +20,7 @@
 /*                                                             */
 /*-------------------------------------------------------------*/
 require_once __DIR__ . '/databaseFunctions.php';
+require_once __DIR__ . '/mailFunctions.php';
 
 const RESET_TOKEN_LIFETIME  = 3600;       // seconds a forgot-password link stays valid (1 hour)
 const INVITE_TOKEN_LIFETIME = 7 * 86400;  // seconds a new user's welcome link stays valid (7 days)
@@ -137,11 +138,10 @@ function reset_complete(string $token, string $password): bool {
 
 /* *********************************************************** */
 /* Function:    send_password_reset_email                      */
-/* Description: Emails the reset link using PHP mail(), which  */
-/*              Bluehost supports out of the box.              */
+/* Description: Emails the reset link (send_site_email()).     */
 /* Inputs:      $to - recipient address.                       */
 /*              $link - the full reset link.                   */
-/* Returns:     true if mail() accepted the message.           */
+/* Returns:     true if the message was accepted for sending.  */
 /* *********************************************************** */
 function send_password_reset_email(string $to, string $link): bool {
     $minutes = RESET_TOKEN_LIFETIME / 60;
@@ -153,22 +153,17 @@ function send_password_reset_email(string $to, string $link): bool {
              . '<p><a href="' . $safe_link . '">' . $safe_link . '</a></p>'
              . '<p>If you didn\'t ask to reset your password, you can ignore this email - your password won\'t change.</p>';
 
-    $headers = 'MIME-Version: 1.0' . "\r\n"
-             . 'Content-type: text/html; charset=utf-8' . "\r\n"
-             . 'From: ' . MAIL_FROM . "\r\n"
-             . 'Reply-To: ' . MAIL_FROM . "\r\n";
-
-    return mail($to, $subject, $message, $headers);
+    return send_site_email($to, $subject, $message);
 }
 
 /* *********************************************************** */
 /* Function:    send_welcome_email                             */
 /* Description: Emails a new user the link to choose their     */
-/*              password (account_reset.php), using mail().    */
+/*              password (account_reset.php).                  */
 /* Inputs:      $to - recipient address (already validated).   */
 /*              $name - the new user's name.                   */
 /*              $link - the full set-password link.            */
-/* Returns:     true if mail() accepted the message.           */
+/* Returns:     true if the message was accepted for sending.  */
 /* *********************************************************** */
 function send_welcome_email(string $to, string $name, string $link): bool {
     $days = INVITE_TOKEN_LIFETIME / 86400;
@@ -185,10 +180,5 @@ function send_welcome_email(string $to, string $name, string $link): bool {
              . '<a href="' . $login_url . '">' . $login_url . '</a>.</p>'
              . '<p>If the link has expired, use <strong>Forgot your password?</strong> on the login panel to get a new one.</p>';
 
-    $headers = 'MIME-Version: 1.0' . "\r\n"
-             . 'Content-type: text/html; charset=utf-8' . "\r\n"
-             . 'From: ' . MAIL_FROM . "\r\n"
-             . 'Reply-To: ' . MAIL_FROM . "\r\n";
-
-    return mail($to, $subject, $message, $headers);
+    return send_site_email($to, $subject, $message);
 }

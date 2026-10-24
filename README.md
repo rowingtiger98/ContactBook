@@ -8,7 +8,10 @@ PHP web application hosted at Bluehost.
 2. Create the tables below in phpMyAdmin. The SQL scripts are kept locally, not in the repository.
 3. Copy `config.example.php` to `config.php` and fill in the database credentials and session path.
    `config.php` is git-ignored — upload it to the server separately.
-4. Set `APP_BASE_URL` and `MAIL_FROM` in `config.php` (used for password reset emails).
+4. Set `APP_BASE_URL`, `MAIL_FROM` and `MAIL_FROM_NAME` in `config.php`. Every email the site sends (password
+   resets, new-user invites, thank-you emails) goes through `send_site_email()` in `mailFunctions.php` and comes
+   from `MAIL_FROM`, which must be an address on the site's own domain (e.g. `no-reply@kirbypark.net`, created in
+   cPanel > Email Accounts). Check cPanel > Email Deliverability shows SPF and DKIM as valid for the domain.
 5. Create the first overlord login over SSH: `php tools/create_user.php <email> overlord` — usernames are email
    addresses. After that, overlords can add users from the dashboard's **Create a New User** tool.
 
@@ -18,7 +21,7 @@ PHP web application hosted at Bluehost.
 |---|---|---|
 | `CB_User_Accounts` | Logins | `CB_Username` (an email, unique), `CB_User_UUID`, `CB_User_Name`, `CB_Password` (VARCHAR(255) for `password_hash()`; NULL until a new user sets it), `CB_User_Role` (`admin` / `overlord`), `CB_Password_Reset_ID`, `CB_Password_Reset_Timer` (when the emailed link expires) |
 | `CB_Created_Books` | One row per contact book | `CB_Book_UUID`, `CB_Book_Name_About`, `CB_Base_Directory`, `CB_Book_Cover_Picture`, `CB_Book_Description`, `CB_Book_Admins` (comma-separated emails of the users who can manage the book; the creator is added automatically, along with any additional admins entered on the Create a New Book form) |
-| `CB_Book_Entry` | One row per entry added to a book | `ENTRY_UUID`, `ENTRY_Book_Parent_UUID` (= `CB_Book_UUID`), `ENTRY_Name`, `ENTRY_Emails`, `ENTRY_Street_Address`, `ENTRY_City`, `ENTRY_State`, `ENTRY_Zip`, `ENTRY_Phone`, `ENTRY_Notes` |
+| `CB_Book_Entry` | One row per entry added to a book | `ENTRY_UUID`, `ENTRY_Book_Parent_UUID` (= `CB_Book_UUID`), `ENTRY_Name`, `ENTRY_Emails`, `ENTRY_Street_Address`, `ENTRY_City`, `ENTRY_State`, `ENTRY_Zip`, `ENTRY_Phone`, `ENTRY_Notes`, `ENTRY_Edit_Token` (SHA-256 hash of the entry's secret edit code) |
 
 Each table also has an `AUTO_INCREMENT` primary key (`CB_User_ID`, `CB_Book_ID`, `ENTRY_ID`).
 
@@ -28,6 +31,13 @@ Each book gets a folder at `books/<CB_Book_UUID>/` with its cover photo and a `p
 added with an entry go in `books/<CB_Book_UUID>/pictures/<ENTRY_UUID>/`. These folders are created on the
 server and are not in the repository. Upload `books/.htaccess` and `.user.ini` (both dot-files) — they block
 folder listings and raise PHP's upload limits.
+
+## Thank-you email and edit links
+
+After someone adds an entry, they're emailed (at the first address they gave) a thank-you with two links:
+**Click Here** opens `edit_my_entry.php`, where they can edit that one entry - fields and photos, but not delete
+it - and a share link to the book's Add Your Information page. The edit link holds a random code (only its hash
+is stored) and doesn't expire. Entries made before edit links existed don't have one.
 
 ## Admin login
 

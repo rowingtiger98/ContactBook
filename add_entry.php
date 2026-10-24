@@ -11,7 +11,8 @@ $entry      = ['name' => '', 'street' => '', 'city' => '', 'state' => '', 'zip' 
 
 // Set just before the redirect below, so the thank-you shows once (Post/Redirect/Get).
 $entry_added = ($book !== null && ($_SESSION['entry_added'] ?? '') === $book['CB_Book_UUID']);
-unset($_SESSION['entry_added']);
+$emailed_to  = $entry_added ? (string) ($_SESSION['entry_emailed_to'] ?? '') : '';  // '' if the email couldn't be sent
+unset($_SESSION['entry_added'], $_SESSION['entry_emailed_to']);
 
 if ($book === null) {
     http_response_code(404);
@@ -30,6 +31,15 @@ if ($book === null) {
     } else {
         $result = create_entry($book['CB_Book_UUID'], $_POST, $_FILES['entry_photos'] ?? null);
         if ($result['success']) {
+            // Thank-you email to their first address, with their edit link and the book's share link.
+            // The entry is saved either way.
+            $to = $result['entry']['emails'][0];
+            $sent = send_entry_thank_you_email($to, $result['entry']['name'], $book['CB_Book_Name_About'],
+                entry_edit_link($result['entry_uuid'], $result['edit_token']), book_share_link($book['CB_Book_UUID']));
+            if (!$sent) {
+                error_log('ContactBook: thank-you email for entry ' . $result['entry_uuid'] . ' failed to send');
+            }
+            $_SESSION['entry_emailed_to'] = $sent ? $to : '';
             $_SESSION['entry_added'] = $book['CB_Book_UUID'];
             header('Location: add_entry.php?book=' . urlencode($book['CB_Book_UUID']));
             exit();
@@ -74,6 +84,11 @@ $emails = $entry['emails'] ?: [''];  // always at least one email box
 				<?php } elseif ($entry_added) { ?>
 					<span class="bold_heading">Thank You!</span>
 					<p>Your information has been added to the book for <?php echo htmlspecialchars($book['CB_Book_Name_About']); ?>.</p>
+					<?php if ($emailed_to !== '') { ?>
+					<p>We've sent a thank-you email to <strong><?php echo htmlspecialchars($emailed_to); ?></strong>. It has a link to edit
+					your entry later, and a link you can share with others who'd like to sign this book. If you don't see it, check your
+					spam or junk folder.</p>
+					<?php } ?>
 					<a href="index.php" class="button special">Back to the Contact Books</a>
 
 				<?php } else { ?>
