@@ -58,7 +58,7 @@ $emails = $entry['emails'] ?: [''];  // always at least one email box
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="stylesheet" href="assets/css/main.css" />
-		<link rel="stylesheet" href="assets/css/contactbook.css" />
+		<link rel="stylesheet" href="<?php echo asset_url('assets/css/contactbook.css'); ?>" />
 	</head>
 	<body>
 
@@ -156,7 +156,7 @@ $emails = $entry['emails'] ?: [''];  // always at least one email box
 								<label for="entry_photos">Photos</label>
 								<input type="file" name="entry_photos[]" id="entry_photos" accept="image/jpeg,image/png,image/webp" multiple
 									data-max-count="<?php echo ENTRY_PHOTOS_MAX_COUNT; ?>" data-max-bytes="<?php echo BOOK_PHOTO_MAX_BYTES; ?>" />
-								<p class="field_note">Optional. Up to <?php echo ENTRY_PHOTOS_MAX_COUNT; ?> photos (JPEG, PNG or WebP), each up to <?php echo BOOK_PHOTO_MAX_BYTES / 1048576; ?> MB.
+								<p class="field_note">Optional. Up to <?php echo ENTRY_PHOTOS_MAX_COUNT; ?> photos (JPEG, PNG or WebP). Large photos are made smaller automatically.
 								<?php if ($form_error !== '') { ?>If you chose photos, please choose them again.<?php } ?></p>
 								<div id="entry_photo_previews" class="entry_photo_previews"></div>
 							</div>
@@ -208,7 +208,8 @@ $emails = $entry['emails'] ?: [''];  // always at least one email box
 			<script src="assets/js/skel.min.js"></script>
 			<script src="assets/js/util.js"></script>
 			<script src="assets/js/main.js"></script>
-			<script src="assets/js/add_entry.js"></script>
+			<script src="<?php echo asset_url('assets/js/photo_resize.js'); ?>"></script>
+			<script src="<?php echo asset_url('assets/js/add_entry.js'); ?>"></script>
 
 	</body>
 </html>

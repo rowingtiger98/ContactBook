@@ -78,7 +78,7 @@
 								<?php } ?>
 								<input type="file" name="entry_photos[]" id="entry_photos" accept="image/jpeg,image/png,image/webp" multiple
 									data-max-count="<?php echo ENTRY_PHOTOS_MAX_COUNT; ?>" data-max-bytes="<?php echo BOOK_PHOTO_MAX_BYTES; ?>" />
-								<p class="field_note">Add photos (JPEG, PNG or WebP, each up to <?php echo BOOK_PHOTO_MAX_BYTES / 1048576; ?> MB).
+								<p class="field_note">Add photos (JPEG, PNG or WebP - large photos are made smaller automatically).
 								An entry can have up to <?php echo ENTRY_PHOTOS_MAX_COUNT; ?> photos in all.
 								<?php if ($form_error !== '') { ?>If you chose photos, please choose them again.<?php } ?></p>
 								<div id="entry_photo_previews" class="entry_photo_previews"></div>

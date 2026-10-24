@@ -11,7 +11,7 @@ var BOOK_PHOTO_MAX_BYTES = 10 * 1048576;  // keep in step with bookFunctions.php
 // Description: Shows a preview of the chosen photo. With no photo chosen it shows the
 //              book's current photo (data-current-src, on Manage a Book) unless
 //              "Remove this photo" is ticked, or else the camera placeholder. Clears the
-//              choice right away if it's too large (the server re-checks on Save).
+//              choice if it's still too large after shrinking (the server re-checks on Save).
 // -------------------------------------------------------------------------------------
 function ShowBookPhotoPreview() {
   var input = document.getElementById('book_photo');
@@ -51,7 +51,29 @@ function ShowBookPhotoPreview() {
   }
 }
 
+// -------------------------------------------------------------------------------------
+// Function: 	ShrinkBookPhoto
+// Description: Shrinks a newly chosen photo (photo_resize.js), then updates the preview.
+// -------------------------------------------------------------------------------------
+function ShrinkBookPhoto() {
+  ShrinkChosenPhotos(this).then(function(files) {
+    if (files !== null) {
+      ShowBookPhotoPreview();
+    }
+  });
+}
+
+// -------------------------------------------------------------------------------------
+// Function: 	WaitForBookPhoto
+// Description: If Save is pressed while the photo is still being shrunk, sends the form
+//              once it's ready.
+// -------------------------------------------------------------------------------------
+function WaitForBookPhoto(event) {
+  WaitForPhotos(this, event);
+}
+
 $(document).ready(function() {
-  $('#book_photo').on('change', ShowBookPhotoPreview);
+  $('#book_photo').on('change', ShrinkBookPhoto);
+  $('#book_photo').closest('form').on('submit', WaitForBookPhoto);
   $('#remove_photo').on('change', ShowBookPhotoPreview);
 });

@@ -32,7 +32,7 @@ if ($selected_uuid !== '') {
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="stylesheet" href="assets/css/main.css" />
-		<link rel="stylesheet" href="assets/css/contactbook.css" />
+		<link rel="stylesheet" href="<?php echo asset_url('assets/css/contactbook.css'); ?>" />
 	</head>
 	<body>
 

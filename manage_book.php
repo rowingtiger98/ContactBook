@@ -76,7 +76,7 @@ if ($selected_book !== null) {
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="stylesheet" href="assets/css/main.css" />
-		<link rel="stylesheet" href="assets/css/contactbook.css" />
+		<link rel="stylesheet" href="<?php echo asset_url('assets/css/contactbook.css'); ?>" />
 	</head>
 	<body>
 
@@ -157,7 +157,7 @@ if ($selected_book !== null) {
 								<div class="12u$">
 									<label for="book_photo">Photo</label>
 									<input type="file" name="book_photo" id="book_photo" accept="image/jpeg,image/png,image/webp" />
-									<p class="field_note">JPEG, PNG or WebP, up to <?php echo BOOK_PHOTO_MAX_BYTES / 1048576; ?> MB.
+									<p class="field_note">JPEG, PNG or WebP. Large photos are made smaller automatically.
 									<?php if ($cover_url !== '') { ?>Choosing a photo replaces the current one.<?php } ?>
 									<?php if ($save_error !== '') { ?>If you chose a photo, please choose it again.<?php } ?></p>
 									<label for="book_photo" id="book_photo_placeholder" class="book_photo_placeholder" title="Choose a photo"<?php if ($cover_url !== '') { ?> hidden<?php } ?>>
@@ -256,7 +256,8 @@ if ($selected_book !== null) {
 			<script src="assets/js/skel.min.js"></script>
 			<script src="assets/js/util.js"></script>
 			<script src="assets/js/main.js"></script>
-			<script src="assets/js/create_book.js"></script>
+			<script src="<?php echo asset_url('assets/js/photo_resize.js'); ?>"></script>
+			<script src="<?php echo asset_url('assets/js/create_book.js'); ?>"></script>
 
 	</body>
 </html>

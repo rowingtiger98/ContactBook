@@ -52,36 +52,43 @@ function RemoveEmailRow() {
 
 // -------------------------------------------------------------------------------------
 // Function: 	ShowEntryPhotoPreviews
-// Description: Shows a small preview of each chosen photo. Clears the choice right away
-//              if there are too many photos or one is too large (data-max-count and
-//              data-max-bytes come from entryFunctions.php; the server re-checks on Save).
+// Description: Shrinks the chosen photos (photo_resize.js), then shows a small preview of
+//              each. Clears the choice right away if there are too many photos or one is
+//              still too large (data-max-count and data-max-bytes come from
+//              entryFunctions.php; the server re-checks on Save).
 // -------------------------------------------------------------------------------------
 function ShowEntryPhotoPreviews() {
+  var input = this;
   var previews = $('#entry_photo_previews');
-  var maxCount = parseInt($(this).data('max-count'), 10);
-  var maxBytes = parseInt($(this).data('max-bytes'), 10);
-  var files = this.files || [];
+  var maxCount = parseInt($(input).data('max-count'), 10);
+  var maxBytes = parseInt($(input).data('max-bytes'), 10);
 
   previews.find('img').each(function() {
     URL.revokeObjectURL(this.src);
   });
   previews.empty();
 
-  if (files.length > maxCount) {
+  if ((input.files || []).length > maxCount) {
     alert('Please choose at most ' + maxCount + ' photos.');
-    this.value = '';
+    input.value = '';
     return;
   }
-  for (var i = 0; i < files.length; i++) {
-    if (files[i].size > maxBytes) {
-      alert('"' + files[i].name + '" is too large. Please choose photos under ' + (maxBytes / 1048576) + ' MB.');
-      this.value = '';
-      return;
+
+  ShrinkChosenPhotos(input).then(function(files) {
+    if (files === null) {
+      return;  // a newer choice replaced this one
     }
-  }
-  for (var j = 0; j < files.length; j++) {
-    $('<img>', { src: URL.createObjectURL(files[j]), alt: files[j].name, title: files[j].name }).appendTo(previews);
-  }
+    for (var i = 0; i < files.length; i++) {
+      if (files[i].size > maxBytes) {
+        alert('"' + files[i].name + '" is too large. Please choose photos under ' + (maxBytes / 1048576) + ' MB.');
+        input.value = '';
+        return;
+      }
+    }
+    for (var j = 0; j < files.length; j++) {
+      $('<img>', { src: URL.createObjectURL(files[j]), alt: files[j].name, title: files[j].name }).appendTo(previews);
+    }
+  });
 }
 
 // -------------------------------------------------------------------------------------
@@ -90,7 +97,7 @@ function ShowEntryPhotoPreviews() {
 //              loads the result (the thank-you page, or the form with an error). Also
 //              stops a second press from saving the entry twice. The Save button isn't
 //              disabled, because a disabled button isn't sent and add_entry.php checks
-//              for it.
+//              for it. If photos are still being shrunk, the form is sent when they're ready.
 // -------------------------------------------------------------------------------------
 function ShowSavingSpinner(event) {
   if ($(this).data('saving')) {
@@ -99,6 +106,7 @@ function ShowSavingSpinner(event) {
   }
   $(this).data('saving', true);
   $('#entry_saving').prop('hidden', false);
+  WaitForPhotos(this, event, { save_entry: '1' });  // sends the form once photos are shrunk
 }
 
 // -------------------------------------------------------------------------------------

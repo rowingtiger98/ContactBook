@@ -65,7 +65,7 @@ if ($found === null) {
 		<meta name="referrer" content="no-referrer" />
 		<meta name="robots" content="noindex, nofollow" />
 		<link rel="stylesheet" href="assets/css/main.css" />
-		<link rel="stylesheet" href="assets/css/contactbook.css" />
+		<link rel="stylesheet" href="<?php echo asset_url('assets/css/contactbook.css'); ?>" />
 	</head>
 	<body>
 
@@ -144,7 +144,8 @@ if ($found === null) {
 			<script src="assets/js/skel.min.js"></script>
 			<script src="assets/js/util.js"></script>
 			<script src="assets/js/main.js"></script>
-			<script src="assets/js/add_entry.js"></script>
+			<script src="<?php echo asset_url('assets/js/photo_resize.js'); ?>"></script>
+			<script src="<?php echo asset_url('assets/js/add_entry.js'); ?>"></script>
 
 	</body>
 </html>

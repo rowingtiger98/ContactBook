@@ -6,6 +6,7 @@
  * user's email and sends a reset link; the link brings them back here with
  * ?resetid=... to choose a new password.
  */
+require_once 'SessionBootstrap.php';  // for asset_url()
 require_once 'passwordReset.php';
 
 $page_type = 'SendResetLink';  // SendResetLink | LinkSent | SetNewPassword | PasswordChanged | Expired | Invalid
@@ -48,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="referrer" content="no-referrer" /><!-- keep the reset token out of Referer headers -->
 		<link rel="stylesheet" href="assets/css/main.css" />
-		<link rel="stylesheet" href="assets/css/contactbook.css" />
+		<link rel="stylesheet" href="<?php echo asset_url('assets/css/contactbook.css'); ?>" />
 	</head>
 	<body>
 
@@ -137,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_
 			<script src="assets/js/skel.min.js"></script>
 			<script src="assets/js/util.js"></script>
 			<script src="assets/js/main.js"></script>
-			<script src="assets/js/account_reset.js"></script>
+			<script src="<?php echo asset_url('assets/js/account_reset.js'); ?>"></script>
 
 	</body>
 </html>
