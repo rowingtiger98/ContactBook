@@ -62,9 +62,9 @@ unset($_SESSION['flash_message']);
 						<div class="4u$ 12u$(medium)">
 							<section class="post">
 								<div class="content">
-									<h3>Download Contacts</h3>
-									<p>Download all contact information as a CSV file.</p>
-									<a href="#" class="button fit special">Coming Soon...</a>
+									<h3>Download a Book</h3>
+									<p>Download a book's entries as a CSV file, ready for Excel or Google Sheets.</p>
+									<a href="download_book.php" class="button fit special">Download a Book</a>
 								</div>
 							</section>
 						</div>

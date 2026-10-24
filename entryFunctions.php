@@ -607,3 +607,77 @@ function delete_entry(string $book_uuid, string $entry_uuid): bool {
     }
     return $deleted;
 }
+
+/* *********************************************************** */
+/* Function:    csv_safe                                       */
+/* Description: Stops a spreadsheet from running a cell as a   */
+/*              formula: text starting with = + - @ or a tab   */
+/*              or carriage return gets a leading apostrophe.  */
+/* Inputs:      $value - one cell's text.                      */
+/* Returns:     The text to write to the CSV file.             */
+/* *********************************************************** */
+function csv_safe(?string $value): string {
+    $value = (string) $value;
+    return ($value !== '' && strpbrk($value[0], "=+-@\t\r") !== false) ? "'" . $value : $value;
+}
+
+/* *********************************************************** */
+/* Function:    send_book_csv                                  */
+/* Description: Sends every entry in a book to the browser as  */
+/*              a CSV download, oldest entry first, with the   */
+/*              book's and entry's UUIDs and the photo         */
+/*              filenames.                                     */
+/*              Starts with a UTF-8 marker so Excel shows      */
+/*              accented letters correctly. The caller must    */
+/*              check that the user may manage the book, and   */
+/*              must not have sent any output yet.             */
+/* Inputs:      $book - the book's row (CB_Book_UUID and       */
+/*              CB_Book_Name_About).                           */
+/* Returns:     Nothing                                        */
+/* *********************************************************** */
+function send_book_csv(array $book): void {
+    $book_uuid = $book['CB_Book_UUID'];
+    $connection = Create_SQL_PHP_DataObject();
+    $stmt = $connection->prepare(
+        'SELECT ENTRY_UUID, ENTRY_Name, ENTRY_Emails, ENTRY_Phone, ENTRY_Street_Address, ENTRY_City,
+                ENTRY_State, ENTRY_Zip, ENTRY_Notes
+         FROM CB_Book_Entry
+         WHERE ENTRY_Book_Parent_UUID = ?
+         ORDER BY ENTRY_ID'
+    );
+    $stmt->execute([$book_uuid]);
+    $entries = $stmt->fetchAll();
+    $stmt = null;
+    $connection = null;
+
+    // e.g. "Mary O'Brien - ContactBook.csv"; plain-ASCII copy for older browsers.
+    $filename = $book['CB_Book_Name_About'] . ' - ContactBook.csv';
+    $ascii    = preg_replace('/[^A-Za-z0-9 ._-]/', '', iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $filename) ?: '') ?: 'ContactBook.csv';
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $ascii . '"; filename*=UTF-8\'\'' . rawurlencode($filename));
+    header('Cache-Control: no-store');  // people's contact details - don't keep copies along the way
+    header('X-Content-Type-Options: nosniff');
+
+    $out = fopen('php://output', 'w');
+    fwrite($out, "\xEF\xBB\xBF");
+    fputcsv($out, ['Name', 'Emails', 'Phone', 'Street Address', 'City', 'State', 'Zip', 'Notes', 'Photos',
+                   'Book UUID', 'Entry UUID', 'Photo Files'], ',', '"', '');
+    foreach ($entries as $entry) {
+        $photos = list_entry_photos($book_uuid, (string) $entry['ENTRY_UUID']);
+        fputcsv($out, [
+            csv_safe($entry['ENTRY_Name']),
+            csv_safe(str_replace(',', ';', (string) $entry['ENTRY_Emails'])),  // "a@x.com; b@y.org"
+            (string) $entry['ENTRY_Phone'],  // only digits and + - ( ) . / - can't be a formula, and keeps "+1 ..." intact
+            csv_safe($entry['ENTRY_Street_Address']),
+            csv_safe($entry['ENTRY_City']),
+            csv_safe($entry['ENTRY_State']),
+            csv_safe($entry['ENTRY_Zip']),
+            csv_safe(str_replace("\n", "\r\n", (string) $entry['ENTRY_Notes'])),
+            count($photos),
+            $book_uuid,
+            (string) $entry['ENTRY_UUID'],  // photos are in books/<Book UUID>/pictures/<Entry UUID>/
+            implode('; ', $photos),  // "photo-1.jpg; photo-2.png" - only ever photo-<n>.jpg/.png, so safe as-is
+        ], ',', '"', '');
+    }
+    fclose($out);
+}

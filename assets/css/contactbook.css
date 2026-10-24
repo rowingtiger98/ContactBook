@@ -245,6 +245,11 @@
   white-space: nowrap;
 }
 
+.entries_download {
+  margin-top: 1em;
+  text-align: right;
+}
+
 .entries_table .entries_actions {
   white-space: nowrap;
   text-align: right;

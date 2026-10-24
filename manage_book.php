@@ -229,6 +229,11 @@ if ($selected_book !== null) {
 									</tbody>
 								</table>
 							</div>
+							<div class="entries_download">
+								<a href="download_book.php?book=<?php echo rawurlencode($selected_uuid); ?>" class="button special small">
+									<i class="fa fa-download" aria-hidden="true"></i> Download CSV
+								</a>
+							</div>
 							<?php } ?>
 						</div>
 					</details>

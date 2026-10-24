@@ -37,7 +37,12 @@ admins see the admin tools, and overlords also see overlord-level tools (such as
 its **Book Details** (name, description, admins and cover photo) and a table of its **Entries**: name, contact,
 the start of the message and the number of photos. Each entry has **Edit** and **Delete** buttons:
 `edit_entry.php` changes any field and removes or adds photos (up to 5 in all), and delete asks first,
-then removes the entry and its photos. Admins can't remove themselves from a book;
+then removes the entry and its photos.
+
+**Download a Book** (`download_book.php`) downloads a book's entries as a CSV file (UTF-8, one row per entry,
+with the number of photos, the book and entry UUIDs and the photo filenames; photos are in
+`books/<Book UUID>/pictures/<Entry UUID>/`). It lists the same books as Manage a Book,
+which also has a **Download CSV** button under the Entries table. Admins can't remove themselves from a book;
 overlords can.
 Sessions time out after 30 minutes idle.
 
