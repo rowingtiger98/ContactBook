@@ -31,10 +31,22 @@ $books = list_books();
 			<section id="welcome" class="welcome_banner">
 				<div class="welcome_banner_text">
 					<span class="bold_heading">Welcome to Contact Book</span>
-					<p>Choose the book you'd like to add your information to.</p>
+					<p>Leave your contact information, a note and a few photos for someone special who's retiring or moving away.</p>
 					<?php if (!empty($books)) { ?>
 					<a href="#books" class="button special">Choose a Book</a>
 					<?php } ?>
+				</div>
+			</section>
+
+		<!-- What Contact Book is for -->
+			<section id="about" class="wrapper about_section">
+				<div class="inner">
+					<p>When someone you know is retiring or moving away, friends, family and coworkers can sign a Contact Book for
+					them. When you sign, you leave your contact information - your address, phone number and email - so they can
+					keep in touch, along with a message or note: a favorite memory, a thank-you or your best wishes. You can add a
+					few photos too, if you like.</p>
+					<p>Once everyone has signed, the book is printed as a hardback book, with a page from each person, and presented
+					to them as a keepsake gift.</p>
 				</div>
 			</section>
 

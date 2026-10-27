@@ -52,7 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     } elseif (isset($_POST['save_entry'])) {
         $remove = is_array($_POST['remove_photos'] ?? null) ? array_filter($_POST['remove_photos'], 'is_string') : [];
-        $result = update_entry($book_uuid, $entry_uuid, $_POST, $_FILES['entry_photos'] ?? null, $remove);
+        // Flags the entry as edited, so Mark Entered is available again for the changes.
+        $result = update_entry($book_uuid, $entry_uuid, $_POST, $_FILES['entry_photos'] ?? null, $remove, ENTRY_STATUS_EDITED);
         if ($result['success']) {
             $_SESSION['flash_message'] = 'Saved the changes to ' . $result['entry']['name'] . '\'s entry.';
             header('Location: ' . $manage_url);

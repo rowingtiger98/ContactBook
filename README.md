@@ -50,10 +50,10 @@ the start of the message and the number of photos. Each entry has **Edit**, **Ma
 then removes the entry and its photos.
 
 The **State** column (`ENTRY_Status`) helps the book's manager keep track of copying entries into their contacts:
-a green **+** is a new entry (`NEW`), a yellow warning triangle means its author changed it with their edit link
-(`EDITED`), and a black check means the manager has entered it (`ENTERED`). **Mark Entered**
+a green **+** is a new entry (`NEW`), a yellow warning triangle means it was changed - by its author with their
+edit link, or by an admin on `edit_entry.php` (`EDITED`), and a black check means the manager has entered it (`ENTERED`). **Mark Entered**
 (`mark_entry_entered.php`, sent in the background by `assets/js/manage_book.js`) sets `ENTERED` and refreshes the row.
-An author's edit sets `EDITED` again, even after it was entered; an admin's edit leaves the state as it is.
+Any edit sets `EDITED` again, even after it was entered, so **Mark Entered** is available again for the changes.
 Entries with no state (from before the column was added) show as new.
 
 **Download a Book** (`download_book.php`) downloads a book's entries as a CSV file (UTF-8, one row per entry,

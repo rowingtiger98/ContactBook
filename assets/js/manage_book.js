@@ -1,7 +1,8 @@
 // -------------------------------------------------------------------------------------
 // manage_book.js
-// Client-side helpers for the entries table on the Manage a Book page (manage_book.php).
-// Without JavaScript the Mark Entered buttons still work - the page reloads instead.
+// Client-side helpers for the Manage a Book page (manage_book.php): the book chooser's
+// Manage button and the entries table. Without JavaScript both still work - Manage is
+// always on, and Mark Entered reloads the page instead.
 // -------------------------------------------------------------------------------------
 
 // -------------------------------------------------------------------------------------
@@ -42,6 +43,22 @@ function MarkEntryEntered(event) {
   });
 }
 
+// -------------------------------------------------------------------------------------
+// Function: 	UpdateManageButton
+// Description: The Manage button is white and switched off until a book is chosen in
+//              the dropdown (other than the one already open), then black and ready.
+//              The page shows it white; without JavaScript it stays usable.
+// -------------------------------------------------------------------------------------
+function UpdateManageButton() {
+  var select = $('#book');
+  var chosen = select.val() || '';
+  var ready = chosen !== '' && chosen !== String(select.data('current') || '');
+  $('#manage_book_go').prop('disabled', !ready).toggleClass('special', ready);
+}
+
 $(document).ready(function() {
   $('.entries_table').on('submit', '.entry_mark_form', MarkEntryEntered);
+  $('#book').on('change', UpdateManageButton);
+  $(window).on('pageshow', UpdateManageButton);  // the browser may restore an earlier choice
+  UpdateManageButton();
 });

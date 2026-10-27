@@ -103,12 +103,13 @@ if ($selected_book !== null) {
 					<?php } else { ?>
 					<p>Choose the book you want to work on.</p>
 
+					<!-- manage_book.js keeps Manage switched off (white) until a different book is chosen. -->
 					<form action="manage_book.php" method="get">
 						<div class="row uniform">
 							<div class="12u$">
 								<label for="book">Book</label>
 								<div class="select-wrapper">
-									<select name="book" id="book" required>
+									<select name="book" id="book" required data-current="<?php echo htmlspecialchars($selected_book !== null ? $selected_uuid : ''); ?>">
 										<option value=""<?php if ($selected_book === null) { ?> selected<?php } ?> disabled>Choose a book…</option>
 										<?php foreach ($books as $book) { ?>
 										<option value="<?php echo htmlspecialchars($book['CB_Book_UUID']); ?>"<?php if ($book === $selected_book) { ?> selected<?php } ?>><?php echo htmlspecialchars($book['CB_Book_Name_About']); ?></option>
@@ -122,7 +123,7 @@ if ($selected_book !== null) {
 							</div>
 							<?php } ?>
 							<div class="6u 12u$(small)">
-								<input type="submit" class="button special fit" value="Manage" />
+								<input type="submit" id="manage_book_go" class="button fit" value="Manage" />
 							</div>
 							<div class="6u$ 12u$(small)">
 								<a href="admin.php" class="button fit">Back to Dashboard</a>

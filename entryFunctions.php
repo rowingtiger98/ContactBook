@@ -39,7 +39,7 @@ const ENTRY_EDIT_TOKEN_BYTES   = 32;    // edit code in the emailed link: 64 hex
 // ENTRY_Status - where the book's manager is with each entry (the State column on Manage a Book).
 // Not to be confused with ENTRY_State, the state in the entry's address.
 const ENTRY_STATUS_NEW     = 'NEW';      // just added
-const ENTRY_STATUS_EDITED  = 'EDITED';   // changed by its author (edit link) since it was added or entered
+const ENTRY_STATUS_EDITED  = 'EDITED';   // changed (by its author or an admin) since it was added or entered
 const ENTRY_STATUS_ENTERED = 'ENTERED';  // the manager has copied it into their contacts
 
 /* *********************************************************** */

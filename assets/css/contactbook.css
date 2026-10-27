@@ -66,6 +66,22 @@
   border-radius: 8px;
 }
 
+/* Each card fills its column, so all the cards in a row are the same width (otherwise
+   a card is only as wide as its content). */
+.book_card {
+  flex: 1 1 auto;
+}
+
+  /* Let the row reach the right edge, in line with the search box. */
+  #book_cards {
+    width: auto;
+  }
+
+/* Front page: the description between the banner and the book cards */
+.about_section {
+  padding-bottom: 0;  /* the book cards' section below has its own top padding */
+}
+
 /* Front page search box (index.js) */
 .book_search {
   margin: 0 0 2em 0;
@@ -348,7 +364,7 @@
     margin: 0;
   }
 
-/* State column: green + (new), yellow warning (edited by its author), black check (entered) */
+/* State column: green + (new), yellow warning (edited), black check (entered) */
 .entries_table .entries_status {
   text-align: center;
   white-space: nowrap;
