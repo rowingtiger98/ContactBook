@@ -1,4 +1,4 @@
-<h1><a href="index.php">ContactBook</a></h1>
+<h1><a href="index.php">Contact Book</a></h1>
 <nav id="nav">
 	<ul>
 		<li><a href="admin.php">Dashboard</a></li>

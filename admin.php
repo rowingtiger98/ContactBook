@@ -1,17 +1,23 @@
 <?php
 include('session.php');
+require_once 'userFunctions.php';
 
-$is_admin = ($login_user_role === 'admin');
+$is_admin    = user_is_admin($login_user_role);     // admin or overlord
+$is_overlord = user_is_overlord($login_user_role);  // sees overlord-level tools too
 $panel_name = $is_admin ? 'Administrative Panel' : 'Account Panel';
+
+// One-time message from another admin page (e.g. "book created").
+$flash_message = $_SESSION['flash_message'] ?? '';
+unset($_SESSION['flash_message']);
 ?>
 <!DOCTYPE HTML>
 <html>
 	<head>
-		<title>ContactBook - Admin</title>
+		<title>Contact Book - Admin</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="stylesheet" href="assets/css/main.css" />
-		<link rel="stylesheet" href="assets/css/contactbook.css" />
+		<link rel="stylesheet" href="<?php echo asset_url('assets/css/contactbook.css'); ?>" />
 	</head>
 	<body>
 
@@ -24,6 +30,9 @@ $panel_name = $is_admin ? 'Administrative Panel' : 'Account Panel';
 			<section id="main" class="wrapper">
 				<div class="inner">
 					<h3><?php echo $panel_name; ?> - <?php echo htmlspecialchars($login_username); ?> (<?php echo htmlspecialchars($login_user_role); ?>)</h3>
+					<?php if ($flash_message !== '') { ?>
+						<p class="flash_message"><?php echo htmlspecialchars($flash_message); ?></p>
+					<?php } ?>
 				</div>
 			</section>
 
@@ -35,33 +44,45 @@ $panel_name = $is_admin ? 'Administrative Panel' : 'Account Panel';
 						<div class="4u 12u$(medium)">
 							<section class="post">
 								<div class="content">
-									<h3>Manage Contacts</h3>
-									<p>Add, view, edit and delete entries in the ContactBook database.</p>
-									<a href="#" class="button fit special">Coming Soon...</a>
+									<h3>Create a New Book</h3>
+									<p>Start a new contact book for someone. Each book gets its own folder on the server.</p>
+									<a href="create_book.php" class="button fit special">Create a Book</a>
 								</div>
 							</section>
 						</div>
 						<div class="4u 12u$(medium)">
 							<section class="post">
 								<div class="content">
-									<h3>Download Contacts</h3>
-									<p>Download all contact information as a CSV file.</p>
-									<a href="#" class="button fit special">Coming Soon...</a>
+									<h3>Manage a Book</h3>
+									<p>Choose one of the books you're an admin of to work on it.</p>
+									<a href="manage_book.php" class="button fit special">Manage a Book</a>
 								</div>
 							</section>
 						</div>
 						<div class="4u$ 12u$(medium)">
 							<section class="post">
 								<div class="content">
-									<h3>User Accounts</h3>
-									<p>Create and manage the users that can log in to ContactBook.</p>
-									<a href="#" class="button fit special">Coming Soon...</a>
+									<h3>Download a Book</h3>
+									<p>Download a book's entries as a CSV file, ready for Excel or Google Sheets.</p>
+									<a href="download_book.php" class="button fit special">Download a Book</a>
 								</div>
 							</section>
 						</div>
+						<?php if ($is_overlord) { ?>
+						<!-- Overlord-level tools -->
+						<div class="4u 12u$(medium)">
+							<section class="post">
+								<div class="content">
+									<h3>Create a New User</h3>
+									<p>Add an admin or overlord. They'll be emailed a link to choose their password.</p>
+									<a href="create_user.php" class="button fit special">Create a User</a>
+								</div>
+							</section>
+						</div>
+						<?php } ?>
 					</div>
 					<?php } else { ?>
-					<p>Your account does not have admin rights. Contact a ContactBook administrator if you need access to the admin tools.</p>
+					<p>Your account does not have admin rights. Contact a Contact Book administrator if you need access to the admin tools.</p>
 					<?php } ?>
 				</div>
 			</section>
@@ -69,7 +90,7 @@ $panel_name = $is_admin ? 'Administrative Panel' : 'Account Panel';
 		<!-- Footer -->
 			<footer id="footer">
 				<div class="inner">
-					<p class="copyright">&copy; <?php echo date('Y'); ?> ContactBook. All rights reserved.</p>
+					<p class="copyright">&copy; <?php echo date('Y'); ?> Contact Book. All rights reserved.</p>
 				</div>
 			</footer>
 
@@ -80,7 +101,7 @@ $panel_name = $is_admin ? 'Administrative Panel' : 'Account Panel';
 			<script src="assets/js/skel.min.js"></script>
 			<script src="assets/js/util.js"></script>
 			<script src="assets/js/main.js"></script>
-			<script src="assets/js/admin.js"></script>
+			<script src="<?php echo asset_url('assets/js/admin.js'); ?>"></script>
 
 	</body>
 </html>

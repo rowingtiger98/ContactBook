@@ -1,2 +1,22 @@
 # Real credentials - see config.example.php
 config.php
+
+# Book folders (books/<book uuid>/) are created on the server by create_book.php
+/books/*
+!/books/.htaccess
+
+# Full-size original photos - the site uses web-sized copies in assets/images/
+/Photos/
+
+# Database scripts - kept locally, run by hand in phpMyAdmin
+*.sql
+
+# PHP error log Bluehost writes into the site folder
+error_log
+
+# OS and editor clutter
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

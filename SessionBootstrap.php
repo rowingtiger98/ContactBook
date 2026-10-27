@@ -122,3 +122,33 @@ function app_logout(string $redirectTo = APP_HOME_URL, ?string $message = null):
     header('Location: ' . $redirectTo);
     exit();
 }
+
+/**
+ * Returns this session's CSRF token, creating it on first use. Put it in a hidden
+ * "csrf_token" field on every form that changes data, and check it with
+ * app_csrf_valid() when the form is posted, so other sites can't submit the form
+ * using a logged-in user's session.
+ */
+function app_csrf_token(): string
+{
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function app_csrf_valid(?string $token): bool
+{
+    return is_string($token) && !empty($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+}
+
+/**
+ * Returns the address of one of the site's own CSS or JS files with its last-changed time
+ * added (assets/js/add_entry.js?v=1729800000), so browsers fetch the new copy as soon as
+ * the file is updated instead of running an old one from their cache.
+ */
+function asset_url(string $path): string
+{
+    $modified = @filemtime(__DIR__ . '/' . $path);
+    return htmlspecialchars($path . ($modified ? '?v=' . $modified : ''));
+}

@@ -11,6 +11,104 @@
   text-transform: uppercase;
 }
 
+/* Front page welcome banner (index.php). The photo's empty wall is on the right,
+   so the text sits there on wide screens and in the middle on small ones.
+   A smaller copy of the photo is used on phones. */
+.welcome_banner {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 32em;
+  height: 70vh;
+  max-height: 44em;
+  padding: 2em 8%;
+  background-color: #e8d3c8;  /* close to the wall color, shown while the photo loads */
+  background-image: url("../images/banner-karola.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
+  .welcome_banner_text {
+    max-width: 28em;
+    padding: 2em;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.8);
+    text-align: center;
+  }
+
+  .welcome_banner_text p {
+    margin-bottom: 1.5em;
+  }
+
+  .welcome_banner_text .button {
+    margin: 0;
+  }
+
+@media screen and (max-width: 736px) {
+  .welcome_banner {
+    justify-content: center;
+    min-height: 24em;
+    height: auto;
+    padding: 2em 16px;
+    background-image: url("../images/banner-karola-small.jpg");
+    background-position: 70% center;
+  }
+
+    .welcome_banner_text {
+      padding: 1.5em;
+    }
+}
+
+/* Front page book cards - a clear border with rounded corners (the theme's own
+   border is very faint). */
+.book_card .content {
+  border: 1px solid #555;
+  border-radius: 8px;
+}
+
+/* Each card fills its column, so all the cards in a row are the same width (otherwise
+   a card is only as wide as its content). */
+.book_card {
+  flex: 1 1 auto;
+}
+
+  /* Let the row reach the right edge, in line with the search box. */
+  #book_cards {
+    width: auto;
+  }
+
+/* Front page: the description between the banner and the book cards */
+.about_section {
+  padding-bottom: 0;  /* the book cards' section below has its own top padding */
+}
+
+/* Front page search box (index.js) */
+.book_search {
+  margin: 0 0 2em 0;
+}
+
+  .book_search[hidden],
+  .book_search_none[hidden],
+  .book_card_cell[hidden] {
+    display: none;
+  }
+
+  .book_search_none {
+    margin: 1em 0 0 0;
+  }
+
+  /* Same border as the book cards. The #books id is needed to beat the theme's
+     ".wrapper.style2 input" rule, which makes input borders a very faint gray. */
+  #books .book_search input[type="search"] {
+    width: 100%;
+    border: 1px solid #555;
+    border-radius: 8px;
+  }
+
+  #books .book_search input[type="search"]:focus {
+    border-color: #4b6f9d;
+  }
+
 .hello {
   text-align: center;
   padding: 4em 0;
@@ -93,6 +191,304 @@
 }
 
 /* Password Reset Page */
-.reset_panel {
+.reset_panel,
+.form_panel {
   max-width: 40em;
+}
+
+.flash_message {
+  margin: 0.5em 0 0 0;
+  padding: 0.5em 0.75em;
+  border-left: solid 3px #4b6f9d;
+}
+
+.field_note {
+  font-size: 0.85em;
+  margin: 0.25em 0 0 0;
+}
+
+.book_photo_preview {
+  display: block;
+  max-width: 100%;
+  max-height: 16em;
+  margin-top: 0.75em;
+  border-radius: 4px;
+}
+
+.book_photo_placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 12em;
+  height: 9em;
+  margin: 0.75em 0 0 0;
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+  color: #aaa;
+  cursor: pointer;
+  font-weight: normal;
+  text-transform: none;
+}
+
+.book_photo_placeholder .fa {
+  font-size: 3em;
+  margin-bottom: 0.25em;
+}
+
+.book_photo_placeholder span {
+  font-size: 0.85em;
+}
+
+/* `display` above would otherwise override the hidden attribute (this is what showed
+   the broken-image icon before a photo was chosen). */
+.book_photo_preview[hidden],
+.book_photo_placeholder[hidden] {
+  display: none;
+}
+
+/* Add Your Information page (add_entry.php) */
+.entry_email_row {
+  display: flex;
+  align-items: center;
+  margin: 0 0 0.5em 0;
+}
+
+  .entry_email_row input {
+    flex: 1;
+  }
+
+  .entry_email_row .button {
+    margin-left: 0.5em;
+  }
+
+.entry_email_row [hidden],
+#entry_email_add[hidden] {
+  display: none;
+}
+
+/* Previews of the photos chosen for an entry */
+.entry_photo_previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin-top: 0.75em;
+}
+
+  .entry_photo_previews img {
+    width: 6em;
+    height: 6em;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+
+/* Full-page "Saving your information..." spinner (add_entry.js) */
+.entry_saving {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1em;
+  background: rgba(255, 255, 255, 0.85);
+  text-align: center;
+}
+
+  .entry_saving[hidden] {
+    display: none;
+  }
+
+  .entry_saving > div {
+    max-width: 24em;
+    padding: 2em;
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 0 0 1em rgba(0, 0, 0, 0.15);
+  }
+
+  .entry_saving .fa {
+    color: #4b6f9d;
+    margin-bottom: 0.5em;
+  }
+
+  .entry_saving p {
+    margin: 0;
+  }
+
+/* Spam trap - kept off-screen rather than display:none, which some bots skip. */
+.entry_website {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.book_photo_remove {
+  margin-top: 0.75em;
+}
+
+/* Manage a Book - entries table */
+.entries_table td {
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.entries_table .entries_photos {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.entries_download {
+  margin-top: 1em;
+  text-align: right;
+}
+
+.entries_table .entries_actions {
+  white-space: nowrap;
+  text-align: right;
+}
+
+  .entries_table .entries_actions .button {
+    padding: 0 0.9em;
+    margin-left: 0.25em;
+  }
+
+  /* Mark Entered is a small form of its own, so it sits in line with the other buttons */
+  .entries_table .entry_mark_form {
+    display: inline;
+    margin: 0;
+  }
+
+/* State column: green + (new), yellow warning (edited), black check (entered) */
+.entries_table .entries_status {
+  text-align: center;
+  white-space: nowrap;
+  width: 1%;
+}
+
+  .entries_table .entries_status .fa {
+    font-size: 1.25em;
+  }
+
+  .entry_status_new {
+    color: #2e9e44;
+  }
+
+  .entry_status_edited {
+    color: #f2b600;
+  }
+
+  .entry_status_entered {
+    color: #000;
+  }
+
+/* Text for screen readers only */
+.sr_only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Edit Entry page (edit_entry.php) - the entry's current photos, each with a Remove box */
+.entry_photo_current {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1em;
+  margin-bottom: 1em;
+}
+
+  .entry_photo_item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .entry_photo_item img {
+    display: block;
+    width: 8em;
+    height: 8em;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 0.5em;
+  }
+
+.entry_delete_link {
+  margin-top: 1em;
+}
+
+/* Collapsible section (<details>) - a gray box whose heading is the toggle, with a
+   chevron that points down when closed and up when open. */
+.collapsible_section {
+  background: #e9e9e9;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 1em 1.25em;
+  margin-bottom: 2em;
+}
+
+  /* The theme's inputs are light gray - make them white so they stand out on the box. */
+  .collapsible_section input[type="text"],
+  .collapsible_section input[type="email"],
+  .collapsible_section textarea,
+  .collapsible_section select {
+    background: #fff;
+  }
+
+  .collapsible_section > summary + * {
+    margin-top: 1.25em;
+  }
+
+  /* Tables keep their white and gray rows, with no extra space under the last one. */
+  .collapsible_section table {
+    background: #fff;
+    margin-bottom: 0;
+  }
+
+  .collapsible_section .collapsible_body > :last-child {
+    margin-bottom: 0;
+  }
+
+.collapsible_section > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  list-style: none;
+}
+
+  .collapsible_section > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .collapsible_section > summary h3 {
+    margin: 0;
+  }
+
+  /* Round button behind the chevron - same gray as the odd rows of the theme's tables (main.css). */
+  .collapsible_section > summary .fa {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2em;
+    height: 2em;
+    border-radius: 50%;
+    background-color: #cbcbcb;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+  }
+
+  .collapsible_section > summary:hover .fa {
+    background-color: #b8b8b8;
+  }
+
+.collapsible_section[open] > summary .fa {
+  transform: rotate(180deg);
 }

@@ -6,6 +6,7 @@
  * user's email and sends a reset link; the link brings them back here with
  * ?resetid=... to choose a new password.
  */
+require_once 'SessionBootstrap.php';  // for asset_url()
 require_once 'passwordReset.php';
 
 $page_type = 'SendResetLink';  // SendResetLink | LinkSent | SetNewPassword | PasswordChanged | Expired | Invalid
@@ -43,18 +44,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_
 <!DOCTYPE HTML>
 <html>
 	<head>
-		<title>ContactBook - Password Reset</title>
+		<title>Contact Book - Password Reset</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="referrer" content="no-referrer" /><!-- keep the reset token out of Referer headers -->
 		<link rel="stylesheet" href="assets/css/main.css" />
-		<link rel="stylesheet" href="assets/css/contactbook.css" />
+		<link rel="stylesheet" href="<?php echo asset_url('assets/css/contactbook.css'); ?>" />
 	</head>
 	<body>
 
 		<!-- Header -->
 			<header id="header">
-				<h1><a href="index.php">ContactBook</a></h1>
+				<h1><a href="index.php">Contact Book</a></h1>
 				<nav id="nav">
 					<ul>
 						<li><a href="index.php">Home</a></li>
@@ -68,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_
 					<span class="bold_heading">Password Reset</span>
 
 					<?php if ($page_type === 'SendResetLink') { ?>
-						<p>Enter the email address you use to log in to ContactBook. We'll email you a link to choose a new password.
+						<p>Enter the email address you use to log in to Contact Book. We'll email you a link to choose a new password.
 						The link is good for <?php echo RESET_TOKEN_LIFETIME / 60; ?> minutes and can only be used once.</p>
 						<form action="account_reset.php" method="post">
 							<input type="hidden" name="action" value="send_link" />
@@ -83,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_
 						</form>
 
 					<?php } elseif ($page_type === 'LinkSent') { ?>
-						<p>If that email address belongs to a ContactBook account, a password reset link is on its way. Check your inbox
+						<p>If that email address belongs to a Contact Book account, a password reset link is on its way. Check your inbox
 						(and spam folder). The link expires in <?php echo RESET_TOKEN_LIFETIME / 60; ?> minutes.</p>
 						<a href="index.php" class="button fit">Return to the Home Page</a>
 
@@ -126,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_
 		<!-- Footer -->
 			<footer id="footer">
 				<div class="inner">
-					<p class="copyright">&copy; <?php echo date('Y'); ?> ContactBook. All rights reserved.</p>
+					<p class="copyright">&copy; <?php echo date('Y'); ?> Contact Book. All rights reserved.</p>
 				</div>
 			</footer>
 
@@ -137,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_
 			<script src="assets/js/skel.min.js"></script>
 			<script src="assets/js/util.js"></script>
 			<script src="assets/js/main.js"></script>
-			<script src="assets/js/account_reset.js"></script>
+			<script src="<?php echo asset_url('assets/js/account_reset.js'); ?>"></script>
 
 	</body>
 </html>

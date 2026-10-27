@@ -4,7 +4,7 @@
  *
  * Command-line only: creates (or resets the password of) a ContactBook login.
  *
- *   php tools/create_user.php <email> [admin|user]
+ *   php tools/create_user.php <email> [admin|overlord]
  *
  * The username must be the user's email address - password reset links are sent to it.
  *
@@ -16,12 +16,13 @@ if (PHP_SAPI !== 'cli') {
 }
 
 require_once __DIR__ . '/../databaseFunctions.php';
+require_once __DIR__ . '/../bookFunctions.php';  // generate_uuid_v4()
 
 $username = $argv[1] ?? '';
 $role     = $argv[2] ?? 'admin';
 
-if ($username === '' || !in_array($role, ['admin', 'user'], true)) {
-    fwrite(STDERR, "Usage: php tools/create_user.php <email> [admin|user]\n");
+if ($username === '' || !in_array($role, ['admin', 'overlord'], true)) {
+    fwrite(STDERR, "Usage: php tools/create_user.php <email> [admin|overlord]\n");
     exit(1);
 }
 
@@ -43,9 +44,9 @@ if (strlen($password) < 8) {
 
 $connection = Create_SQL_PHP_DataObject();
 $stmt = $connection->prepare(
-    'INSERT INTO CB_User_Accounts (CB_Username, CB_Password, CB_User_Role) VALUES (?, ?, ?)
+    'INSERT INTO CB_User_Accounts (CB_Username, CB_User_UUID, CB_Password, CB_User_Role) VALUES (?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE CB_Password = VALUES(CB_Password), CB_User_Role = VALUES(CB_User_Role)'
 );
-$stmt->execute([$username, password_hash($password, PASSWORD_DEFAULT), $role]);
+$stmt->execute([$username, generate_uuid_v4(), password_hash($password, PASSWORD_DEFAULT), $role]);
 
 echo "Saved user '$username' with role '$role'.\n";

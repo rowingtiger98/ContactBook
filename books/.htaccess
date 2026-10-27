@@ -1,0 +1,3 @@
+# ContactBook - every book's folder lives here (books/<uuid>/), created by
+# create_book.php. Never list this folder: the list would show every book's UUID.
+Options -Indexes
